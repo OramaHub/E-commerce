@@ -31,3 +31,52 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+*.log.*
+/logs/
+log/
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local
+*.env
+
+### OS Files ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### Temporary Files ###
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.#*
+
+### Maven ###
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+### Test Coverage ###
+*.exec
+*.ser
+/coverage/
+/.nyc_output/
+
+### Application ###
+/data/
+/uploads/
