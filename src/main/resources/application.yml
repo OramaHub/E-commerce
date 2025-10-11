@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: e-commerce
+  datasource:
+    url: ${POSTGRES_HOST:jdbc:postgresql://localhost:5432/ecommerce_db}
+    username: ${POSTGRES_USERNAME:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
