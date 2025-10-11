@@ -25,9 +25,9 @@ public class Order {
   @Column(name = "orderDate")
   private LocalDate orderDate;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "status_order", length = 20)
-  private OrderStatus status;
+  //  @Enumerated(EnumType.STRING)
+  //  @Column(name = "status_order", length = 20)
+  /// /  private OrderStatus status;
 
   @Column(name = "subtotal", precision = 15, scale = 2)
   private BigDecimal subtotal;
@@ -83,13 +83,13 @@ public class Order {
     this.orderDate = orderDate;
   }
 
-  public OrderStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(OrderStatus status) {
-    this.status = status;
-  }
+  //  public OrderStatus getStatus() {
+  //    return status;
+  //  }
+  //
+  //  public void setStatus(OrderStatus status) {
+  //    this.status = status;
+  //  }
 
   public BigDecimal getSubtotal() {
     return subtotal;

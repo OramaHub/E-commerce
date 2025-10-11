@@ -21,7 +21,7 @@ public class City {
   private String name;
 
   @OneToMany(mappedBy = "city", fetch = FetchType.LAZY)
-  private List<Client> clients;
+  private List<Address> addresses;
 
   public City() {}
 
@@ -51,14 +51,6 @@ public class City {
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public List<Client> getClients() {
-    return clients;
-  }
-
-  public void setClients(List<Client> clients) {
-    this.clients = clients;
   }
 
   @Override

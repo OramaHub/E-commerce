@@ -1,5 +1,6 @@
 package com.orama.e_commerce.models;
 
+import com.orama.e_commerce.enums.UserRole;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -13,10 +14,6 @@ public class Client {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "idClient")
   private Long id;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "City_idCity", nullable = false)
-  private City city;
 
   @Column(name = "Name", nullable = false, length = 150)
   private String name;
@@ -39,17 +36,16 @@ public class Client {
   @Column(name = "created_at")
   private LocalDate createdAt;
 
-  @Column(name = "street", length = 255)
-  private String street;
+  @Enumerated(EnumType.STRING)
+  private UserRole role;
+
+  @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
+  private List<Address> addresses;
 
   @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
   private List<Cart> carts;
 
   public Client() {}
-
-  public Client(Long id) {
-    this.id = id;
-  }
 
   public Long getId() {
     return id;
@@ -57,14 +53,6 @@ public class Client {
 
   public void setId(Long id) {
     this.id = id;
-  }
-
-  public City getCity() {
-    return city;
-  }
-
-  public void setCity(City city) {
-    this.city = city;
   }
 
   public String getName() {
@@ -123,12 +111,20 @@ public class Client {
     this.createdAt = createdAt;
   }
 
-  public String getStreet() {
-    return street;
+  public UserRole getRole() {
+    return role;
   }
 
-  public void setStreet(String street) {
-    this.street = street;
+  public void setRole(UserRole role) {
+    this.role = role;
+  }
+
+  public List<Address> getAddresses() {
+    return addresses;
+  }
+
+  public void setAddresses(List<Address> addresses) {
+    this.addresses = addresses;
   }
 
   public List<Cart> getCarts() {
