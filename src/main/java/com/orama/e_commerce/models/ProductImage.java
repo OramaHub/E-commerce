@@ -1,4 +1,4 @@
-package com.orama.e_commerce;
+package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
 import java.util.Objects;
