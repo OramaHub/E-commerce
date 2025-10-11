@@ -15,16 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/clients")
 public class ClientController {
 
-    private final ClientService clientService;
+  private final ClientService clientService;
 
-    public ClientController(ClientService clientService) {
-        this.clientService = clientService;
-    }
+  public ClientController(ClientService clientService) {
+    this.clientService = clientService;
+  }
 
-    @PostMapping
-    public ResponseEntity<ClientResponseDto> createClient(
-            @Valid @RequestBody ClientRequestDto requestDto) {
-        ClientResponseDto dto = clientService.createClient(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
-    }
+  @PostMapping
+  public ResponseEntity<ClientResponseDto> createClient(
+      @Valid @RequestBody ClientRequestDto requestDto) {
+    ClientResponseDto dto = clientService.createClient(requestDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+  }
 }

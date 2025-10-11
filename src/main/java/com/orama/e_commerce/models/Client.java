@@ -2,9 +2,7 @@ package com.orama.e_commerce.models;
 
 import com.orama.e_commerce.enums.UserRole;
 import jakarta.persistence.*;
-
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
@@ -105,15 +103,15 @@ public class Client {
     this.active = active;
   }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
 
-    public UserRole getRole() {
+  public UserRole getRole() {
     return role;
   }
 
