@@ -2,7 +2,7 @@ package com.orama.e_commerce.models;
 
 import com.orama.e_commerce.enums.UserRole;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,7 +34,7 @@ public class Client {
   private Boolean active;
 
   @Column(name = "created_at")
-  private LocalDate createdAt;
+  private Instant createdAt;
 
   @Enumerated(EnumType.STRING)
   private UserRole role;
@@ -103,11 +103,11 @@ public class Client {
     this.active = active;
   }
 
-  public LocalDate getCreatedAt() {
+  public Instant getCreatedAt() {
     return createdAt;
   }
 
-  public void setCreatedAt(LocalDate createdAt) {
+  public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
   }
 

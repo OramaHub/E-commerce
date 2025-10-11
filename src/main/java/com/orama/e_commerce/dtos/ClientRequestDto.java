@@ -14,4 +14,6 @@ public record ClientRequestDto(
             regexp = "^[a-z0-9.+-_]+@[a-z0-9.-]+\\.[a-z]{2,}$")
         @Size(max = 100, message = "Email must be at most 100 characters long")
         String email,
-    @NotBlank(message = "Password cannot be empty") String password) {}
+    @NotBlank(message = "Password cannot be empty") String password,
+    @NotBlank String cpf,
+    @NotBlank String phone) {}
