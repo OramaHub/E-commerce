@@ -1,4 +1,4 @@
-package com.orama.e_commerce.dtos;
+package com.orama.e_commerce.dtos.client;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

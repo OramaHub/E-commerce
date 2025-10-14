@@ -11,27 +11,29 @@ import java.time.Instant;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ClientService {
+public class AdminService {
 
   private final ClientRepository clientRepository;
   private final ClientMapper clientMapper;
 
-  public ClientService(ClientRepository clientRepository, ClientMapper clientMapper) {
+  //    private final PasswordEncoder passwordEncoder;
+
+  public AdminService(ClientRepository clientRepository, ClientMapper clientMapper) {
     this.clientRepository = clientRepository;
     this.clientMapper = clientMapper;
   }
 
   @Transactional
-  public ClientResponseDto createClient(ClientRequestDto clientRequestDto) {
-    Client client = clientMapper.toEntity(clientRequestDto);
+  public ClientResponseDto createAdmin(ClientRequestDto dto) {
+    Client client = clientMapper.toEntity(dto);
 
     client.setActive(true);
-    client.setRole(UserRole.USER);
+    client.setRole(UserRole.ADMIN);
     client.setCreatedAt(Instant.now());
-    client.setPasswordHash(client.getPasswordHash());
+    client.setPasswordHash(dto.password());
 
-    clientRepository.save(client);
+    Client savedAdmin = clientRepository.save(client);
 
-    return clientMapper.toResponseDto(client);
+    return clientMapper.toResponseDto(savedAdmin);
   }
 }

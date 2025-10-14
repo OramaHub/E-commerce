@@ -1,4 +1,4 @@
-package com.orama.e_commerce.dtos;
+package com.orama.e_commerce.dtos.client;
 
 import com.orama.e_commerce.enums.UserRole;
 
