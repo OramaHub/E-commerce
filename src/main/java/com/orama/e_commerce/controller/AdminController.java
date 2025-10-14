@@ -14,16 +14,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admins")
 public class AdminController {
 
-    private final AdminService adminService;
+  private final AdminService adminService;
 
-    public AdminController(AdminService adminService) {
-        this.adminService = adminService;
-    }
+  public AdminController(AdminService adminService) {
+    this.adminService = adminService;
+  }
 
-    //    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<ClientResponseDto> createAdmin(@Valid @RequestBody ClientRequestDto dto) {
-        ClientResponseDto response = adminService.createAdmin(dto);
-        return ResponseEntity.ok(response);
-    }
+  //    @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping
+  public ResponseEntity<ClientResponseDto> createAdmin(@Valid @RequestBody ClientRequestDto dto) {
+    ClientResponseDto response = adminService.createAdmin(dto);
+    return ResponseEntity.ok(response);
+  }
 }
