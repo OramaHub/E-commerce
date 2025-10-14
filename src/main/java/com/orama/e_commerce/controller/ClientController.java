@@ -1,7 +1,7 @@
 package com.orama.e_commerce.controller;
 
-import com.orama.e_commerce.dtos.ClientRequestDto;
-import com.orama.e_commerce.dtos.ClientResponseDto;
+import com.orama.e_commerce.dtos.client.ClientRequestDto;
+import com.orama.e_commerce.dtos.client.ClientResponseDto;
 import com.orama.e_commerce.service.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package com.orama.e_commerce.mapper;
 
-import com.orama.e_commerce.dtos.ClientRequestDto;
-import com.orama.e_commerce.dtos.ClientResponseDto;
+import com.orama.e_commerce.dtos.client.ClientRequestDto;
+import com.orama.e_commerce.dtos.client.ClientResponseDto;
 import com.orama.e_commerce.models.Client;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

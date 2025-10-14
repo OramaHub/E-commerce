@@ -1,0 +1,39 @@
+package com.orama.e_commerce.service;
+
+import com.orama.e_commerce.dtos.client.ClientRequestDto;
+import com.orama.e_commerce.dtos.client.ClientResponseDto;
+import com.orama.e_commerce.enums.UserRole;
+import com.orama.e_commerce.mapper.ClientMapper;
+import com.orama.e_commerce.models.Client;
+import com.orama.e_commerce.repository.ClientRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+
+@Service
+public class AdminService {
+
+    private final ClientRepository clientRepository;
+    private final ClientMapper clientMapper;
+//    private final PasswordEncoder passwordEncoder;
+
+    public AdminService(ClientRepository clientRepository, ClientMapper clientMapper) {
+        this.clientRepository = clientRepository;
+        this.clientMapper = clientMapper;
+    }
+
+    @Transactional
+    public ClientResponseDto createAdmin(ClientRequestDto dto) {
+        Client client = clientMapper.toEntity(dto);
+
+        client.setActive(true);
+        client.setRole(UserRole.ADMIN);
+        client.setCreatedAt(Instant.now());
+        client.setPasswordHash(dto.password());
+
+        Client savedAdmin = clientRepository.save(client);
+
+        return clientMapper.toResponseDto(savedAdmin);
+    }
+}
