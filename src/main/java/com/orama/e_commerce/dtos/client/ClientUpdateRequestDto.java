@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record ClientRequestDto(
+public record ClientUpdateRequestDto(
     @NotBlank(message = "Name cannot be empty")
         @Size(max = 150, message = "Name must be at most 150 characters long")
         String name,
@@ -14,10 +14,6 @@ public record ClientRequestDto(
             regexp = "^[a-z0-9.+-_]+@[a-z0-9.-]+\\.[a-z]{2,}$")
         @Size(max = 100, message = "Email must be at most 100 characters long")
         String email,
-    @NotBlank(message = "Password cannot be empty") String password,
-    @NotBlank(message = "CPF cannot be empty")
-        @Size(min = 11, max = 11, message = "CPF must be 11 characters long")
-        String cpf,
     @NotBlank(message = "Phone cannot be empty")
         @Size(max = 30, message = "Phone must be at most 30 characters long")
         String phone) {}
