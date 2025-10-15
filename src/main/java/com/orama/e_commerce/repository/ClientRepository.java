@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClientRepository extends JpaRepository<Client, Long> {
   Optional<Client> findByEmail(String mail);
+
+  boolean existsByEmailAndIdNot(String email, Long id);
 }
