@@ -42,9 +42,14 @@ public class JwtService {
     return extractExpiration(token).before(new Date());
   }
 
-  public String generateToken(UserDetails userDetails) {
+  public String generateToken(UserDetails userDetails, Long clientId) {
     Map<String, Object> claims = new HashMap<>();
+    claims.put("id", clientId);
     return createToken(claims, userDetails.getUsername());
+  }
+
+  public Long extractUserId(String token) {
+    return extractClaim(token, claims -> claims.get("id", Long.class));
   }
 
   private String createToken(Map<String, Object> claims, String subject) {
