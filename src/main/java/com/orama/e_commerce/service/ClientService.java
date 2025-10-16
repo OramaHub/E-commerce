@@ -62,8 +62,7 @@ public class ClientService {
 
   @Transactional
   public void updatePassword(Long id, ChangePasswordRequestDto dto) {
-    Client client =
-        clientRepository.findById(id).orElseThrow(() -> new RuntimeException("Client not found"));
+    Client client = findById(id);
 
     if (!passwordEncoder.matches(dto.currentPassword(), client.getPasswordHash())) {
       throw new RuntimeException("Current password is incorrect.");
