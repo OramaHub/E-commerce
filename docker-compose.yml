@@ -29,6 +29,13 @@ services:
       POSTGRES_HOST: jdbc:postgresql://postgres:5432/ecommerce_db
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: postgres
+      JWT_SECRET: aHd3+Bb2oLpGVW889uDOSGOgWb2H+YtcDWRtfsiuMbE=
+      JWT_EXPIRATION: 86400000
+      ADMIN_EMAIL: admin@email.com
+      ADMIN_PASSWORD: 123456
+      ADMIN_NAME: First Admin
+      ADMIN_CPF: "00000000000"
+      ADMIN_PHONE: "(00) 00000-0000"
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8080:8080"

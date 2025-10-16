@@ -1,10 +1,12 @@
 spring:
   application:
     name: e-commerce
+  server:
+    port: 8081
   datasource:
-    url: ${POSTGRES_HOST:jdbc:postgresql://localhost:5432/ecommerce_db}
-    username: ${POSTGRES_USERNAME:postgres}
-    password: ${POSTGRES_PASSWORD:postgres}
+    url: ${POSTGRES_HOST}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -14,5 +16,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
-  expiration: ${JWT_EXPIRATION:86400000}
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+  name: ${ADMIN_NAME}
+  cpf: ${ADMIN_CPF}
+  phone: ${ADMIN_PHONE}

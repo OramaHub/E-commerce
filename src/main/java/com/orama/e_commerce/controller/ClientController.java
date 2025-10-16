@@ -8,6 +8,7 @@ import com.orama.e_commerce.service.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +28,7 @@ public class ClientController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
+  @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
   @PutMapping("/{id}")
   public ResponseEntity<ClientResponseDto> updateClient(
       @PathVariable Long id, @Valid @RequestBody ClientUpdateRequestDto requestDto) {
@@ -34,6 +36,7 @@ public class ClientController {
     return ResponseEntity.status(HttpStatus.OK).body(dto);
   }
 
+  @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
   @PatchMapping("/{id}/password")
   public ResponseEntity<Void> updatePassword(
       @PathVariable Long id, @Valid @RequestBody ChangePasswordRequestDto dto) {
@@ -41,6 +44,7 @@ public class ClientController {
     return ResponseEntity.noContent().build();
   }
 
+  @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
   @PatchMapping("/{id}/deactivate")
   public ResponseEntity<Void> deactivateClient(@PathVariable Long id) {
     clientService.deactivateClient(id);

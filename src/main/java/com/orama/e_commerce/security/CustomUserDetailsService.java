@@ -29,6 +29,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             .orElseThrow(
                 () -> new UsernameNotFoundException("User not found with email: " + email));
 
+    if (!client.getActive()) {
+      throw new UsernameNotFoundException("User account is inactive");
+    }
+
     List<GrantedAuthority> authorities = new ArrayList<>();
     authorities.add(new SimpleGrantedAuthority("ROLE_" + client.getRole().name()));
 

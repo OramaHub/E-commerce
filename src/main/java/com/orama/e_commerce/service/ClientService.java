@@ -65,11 +65,11 @@ public class ClientService {
   public void updatePassword(Long id, ChangePasswordRequestDto dto) {
     Client client = findById(id);
 
-    if (!client.getPasswordHash().equals(dto.currentPassword())) {
-      throw new InvalidPasswordException("Current password is incorrect.");
+    if (!passwordEncoder.matches(dto.currentPassword(), client.getPasswordHash())) {
+      throw new RuntimeException("Current password is incorrect.");
     }
 
-    client.setPasswordHash(dto.newPassword());
+    client.setPasswordHash(passwordEncoder.encode(dto.newPassword()));
     clientRepository.save(client);
   }
 
