@@ -65,11 +65,11 @@ public class ClientService {
     Client client =
         clientRepository.findById(id).orElseThrow(() -> new RuntimeException("Client not found"));
 
-    if (!client.getPasswordHash().equals(dto.currentPassword())) {
+    if (!passwordEncoder.matches(dto.currentPassword(), client.getPasswordHash())) {
       throw new RuntimeException("Current password is incorrect.");
     }
 
-    client.setPasswordHash(dto.newPassword());
+    client.setPasswordHash(passwordEncoder.encode(dto.newPassword()));
     clientRepository.save(client);
   }
 
