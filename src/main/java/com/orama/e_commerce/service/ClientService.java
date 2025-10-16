@@ -5,6 +5,7 @@ import com.orama.e_commerce.dtos.client.ClientRequestDto;
 import com.orama.e_commerce.dtos.client.ClientResponseDto;
 import com.orama.e_commerce.dtos.client.ClientUpdateRequestDto;
 import com.orama.e_commerce.enums.UserRole;
+import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.mapper.ClientMapper;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.ClientRepository;
@@ -50,7 +51,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (clientRepository.existsByEmailAndIdNot(updateRequestDto.email(), id)) {
-      throw new RuntimeException("Email already in use by another client.");
+      throw new EmailAlreadyExistsException("Email already in use by another client.");
     }
 
     clientMapper.updateDto(updateRequestDto, client);
@@ -77,7 +78,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (!client.getActive()) {
-      throw new RuntimeException("Client is already inactive.");
+      throw new ClientAlreadyInactiveException("Client is already inactive.");
     }
 
     client.setActive(false);
@@ -86,13 +87,13 @@ public class ClientService {
 
   private void findByEmail(String email) {
     if (clientRepository.findByEmail(email).isPresent()) {
-      throw new RuntimeException("User with email '" + email + "' already exists");
+      throw new ClientAlreadyExistsException("Client with email '" + email + "' already exists");
     }
   }
 
   private Client findById(Long id) {
     return clientRepository
         .findById(id)
-        .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+        .orElseThrow(() -> new ClientNotFoundException("Client not found with id " + id));
   }
 }
