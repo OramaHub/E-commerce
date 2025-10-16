@@ -1,4 +1,4 @@
-package com.orama.e_commerce.config;
+package com.orama.e_commerce.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
