@@ -2,6 +2,11 @@ package com.orama.e_commerce.exceptions.handler;
 
 import com.orama.e_commerce.exceptions.BadRequestException;
 import com.orama.e_commerce.exceptions.client.*;
+import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
+import com.orama.e_commerce.exceptions.product.ProductAlreadyInactiveException;
+import com.orama.e_commerce.exceptions.product.ProductNotFoundException;
+import com.orama.e_commerce.exceptions.product.StockNegativeException;
+import com.orama.e_commerce.exceptions.product_image.ProductImageNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +92,16 @@ public class GlobalExceptionHandler {
         .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
   }
 
+  @ExceptionHandler(ClientAlreadyActiveException.class)
+  public ResponseEntity<ErrorMessage> handleClientAlreadyActiveException(
+      ClientAlreadyActiveException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+  }
+
   @ExceptionHandler(ClientAlreadyInactiveException.class)
   public ResponseEntity<ErrorMessage> handleClientAlreadyInactiveException(
       ClientAlreadyInactiveException ex, HttpServletRequest request) {
@@ -105,6 +120,56 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .contentType(MediaType.APPLICATION_JSON)
         .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(ProductNotFoundException.class)
+  public ResponseEntity<ErrorMessage> handleProductNotFoundException(
+      ProductNotFoundException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
+  }
+
+  @ExceptionHandler(ProductAlreadyActiveException.class)
+  public ResponseEntity<ErrorMessage> handleProductAlreadyActiveException(
+      ProductAlreadyActiveException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(ProductAlreadyInactiveException.class)
+  public ResponseEntity<ErrorMessage> handleProductAlreadyInactiveException(
+      ProductAlreadyInactiveException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(StockNegativeException.class)
+  public ResponseEntity<ErrorMessage> handleStockNegativeException(
+      StockNegativeException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.BAD_REQUEST, ex.getMessage()));
+  }
+
+  @ExceptionHandler(ProductImageNotFoundException.class)
+  public ResponseEntity<ErrorMessage> handleProductImageNotFoundException(
+      ProductImageNotFoundException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
   }
 
   @ExceptionHandler(BadRequestException.class)

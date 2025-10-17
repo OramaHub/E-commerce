@@ -85,6 +85,18 @@ public class ClientService {
     clientRepository.save(client);
   }
 
+  @Transactional
+  public void activateClient(Long id) {
+    Client client = findById(id);
+
+    if (client.getActive()) {
+      throw new ClientAlreadyActiveException("Client is already active.");
+    }
+
+    client.setActive(true);
+    clientRepository.save(client);
+  }
+
   private void findByEmail(String email) {
     if (clientRepository.findByEmail(email).isPresent()) {
       throw new ClientAlreadyExistsException("Client with email '" + email + "' already exists");
