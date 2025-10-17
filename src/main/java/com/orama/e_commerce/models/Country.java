@@ -1,23 +1,33 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "country")
+@Table(name = "tb_country")
 public class Country {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idcountry")
   private Long id;
 
-  @Column(name = "name", nullable = false, length = 150)
+  @Column(nullable = false, length = 150)
   private String name;
 
   @Column(name = "sgl", length = 10)
   private String abbreviation;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   @OneToMany(mappedBy = "country", fetch = FetchType.LAZY)
   private List<State> states;
@@ -50,6 +60,22 @@ public class Country {
 
   public void setAbbreviation(String abbreviation) {
     this.abbreviation = abbreviation;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   public List<State> getStates() {

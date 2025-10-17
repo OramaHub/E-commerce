@@ -2,30 +2,40 @@ package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "OrderItem")
+@Table(name = "tb_order_item")
 public class OrderItem {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idOrderItem")
   private Long id;
 
+  @Column(nullable = false)
+  private Integer quantity;
+
+  @Column(name = "unit_price", nullable = false, precision = 15, scale = 2)
+  private BigDecimal unitPrice;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
+
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "Product_idProduct", nullable = false)
+  @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "Order_cart_idOrder", nullable = false)
+  @JoinColumn(name = "order_cart_id", nullable = false)
   private Order order;
-
-  @Column(name = "quantity", nullable = false)
-  private Integer quantity;
-
-  @Column(name = "unitPrice", nullable = false, precision = 15, scale = 2)
-  private BigDecimal unitPrice;
 
   public OrderItem() {}
 
@@ -71,6 +81,22 @@ public class OrderItem {
 
   public void setUnitPrice(BigDecimal unitPrice) {
     this.unitPrice = unitPrice;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override

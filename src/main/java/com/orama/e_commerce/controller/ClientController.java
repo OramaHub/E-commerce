@@ -51,6 +51,7 @@ public class ClientController {
     return ResponseEntity.noContent().build();
   }
 
+  @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
   @PatchMapping("/{id}/activate")
   public ResponseEntity<Void> activateClient(@PathVariable Long id) {
     clientService.activateClient(id);

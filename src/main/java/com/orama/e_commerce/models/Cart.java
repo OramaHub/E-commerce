@@ -1,28 +1,35 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.io.Serializable;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "Cart")
-public class Cart {
+@Table(name = "tb_cart")
+public class Cart implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idCart")
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "Client_idClient", nullable = false)
-  private Client client;
-
-  @Column(name = "updatedAt")
-  private LocalDate updatedAt;
-
-  @Column(name = "sessionId", length = 120)
+  @Column(name = "session_id", length = 120)
   private String sessionId;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "client_id", nullable = false)
+  private Client client;
 
   @OneToMany(
       mappedBy = "cart",
@@ -56,20 +63,28 @@ public class Cart {
     this.client = client;
   }
 
-  public LocalDate getUpdatedAt() {
-    return updatedAt;
-  }
-
-  public void setUpdatedAt(LocalDate updatedAt) {
-    this.updatedAt = updatedAt;
-  }
-
   public String getSessionId() {
     return sessionId;
   }
 
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   public List<CartItem> getItems() {

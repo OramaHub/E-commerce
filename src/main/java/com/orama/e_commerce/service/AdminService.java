@@ -7,7 +7,6 @@ import com.orama.e_commerce.mapper.ClientMapper;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.ClientRepository;
 import jakarta.transaction.Transactional;
-import java.time.Instant;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +32,6 @@ public class AdminService {
 
     client.setActive(true);
     client.setRole(UserRole.ADMIN);
-    client.setCreatedAt(Instant.now());
     client.setPasswordHash(passwordEncoder.encode(dto.password()));
 
     Client savedAdmin = clientRepository.save(client);

@@ -1,24 +1,34 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "City")
+@Table(name = "tb_city")
 public class City {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idCity")
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "state_idstate", nullable = false)
+  @JoinColumn(name = "state_id", nullable = false)
   private State state;
 
-  @Column(name = "name", nullable = false, length = 150)
+  @Column(nullable = false, length = 150)
   private String name;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   @OneToMany(mappedBy = "city", fetch = FetchType.LAZY)
   private List<Address> addresses;
@@ -51,6 +61,30 @@ public class City {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public List<Address> getAddresses() {
+    return addresses;
+  }
+
+  public void setAddresses(List<Address> addresses) {
+    this.addresses = addresses;
   }
 
   @Override

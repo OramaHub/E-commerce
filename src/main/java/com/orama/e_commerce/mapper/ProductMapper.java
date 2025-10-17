@@ -20,12 +20,16 @@ public interface ProductMapper {
   @Mapping(target = "stock", source = "stock")
   @Mapping(target = "active", ignore = true)
   @Mapping(target = "images", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
   Product toEntity(ProductRequestDto requestDto);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "stock", ignore = true)
   @Mapping(target = "active", ignore = true)
   @Mapping(target = "images", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
   void updateDto(ProductUpdateRequestDto updateDto, @MappingTarget Product product);
 
   ProductResponseDto toResponseDto(Product product);
