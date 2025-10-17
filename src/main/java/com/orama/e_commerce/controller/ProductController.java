@@ -51,14 +51,14 @@ public class ProductController {
     return ResponseEntity.ok(response);
   }
 
-  //    @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/deactivate")
   public ResponseEntity<Void> deactivateProduct(@PathVariable Long id) {
     productService.deactivateProduct(id);
     return ResponseEntity.noContent().build();
   }
 
-  //    @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/activate")
   public ResponseEntity<Void> activateProduct(@PathVariable Long id) {
     productService.activateProduct(id);

@@ -12,6 +12,8 @@ public interface ProductImageMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "product", ignore = true)
   @Mapping(target = "url", source = "url")
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
   ProductImage toEntity(ProductImageRequestDto productImageRequestDto);
 
   ProductImageResponseDto toResponseDto(ProductImage image);
