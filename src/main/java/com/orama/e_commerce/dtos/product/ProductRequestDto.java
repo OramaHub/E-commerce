@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
-// primeira criação
 public record ProductRequestDto(
     @NotBlank String name,
     String description,

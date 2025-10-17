@@ -50,4 +50,10 @@ public class ClientController {
     clientService.deactivateClient(id);
     return ResponseEntity.noContent().build();
   }
+
+  @PatchMapping("/{id}/activate")
+  public ResponseEntity<Void> activateClient(@PathVariable Long id) {
+    clientService.activateClient(id);
+    return ResponseEntity.noContent().build();
+  }
 }
