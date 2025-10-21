@@ -22,6 +22,7 @@ public interface ClientMapper {
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "addresses", ignore = true)
   @Mapping(target = "carts", ignore = true)
+  @Mapping(target = "orders", ignore = true)
   Client toEntity(ClientRequestDto requestDto);
 
   @Mapping(target = "id", ignore = true)
@@ -32,6 +33,7 @@ public interface ClientMapper {
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "addresses", ignore = true)
   @Mapping(target = "carts", ignore = true)
+  @Mapping(target = "orders", ignore = true)
   void updateDto(ClientUpdateRequestDto requestDto, @MappingTarget Client client);
 
   ClientResponseDto toResponseDto(Client client);

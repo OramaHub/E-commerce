@@ -13,6 +13,12 @@ public class OrderItem {
   @Column(name = "idOrderItem")
   private Long id;
 
+  @Column(name = "quantity", nullable = false)
+  private Integer quantity;
+
+  @Column(name = "unitPrice", nullable = false, precision = 15, scale = 2)
+  private BigDecimal unitPrice;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "Product_idProduct", nullable = false)
   private Product product;
@@ -20,12 +26,6 @@ public class OrderItem {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "Order_cart_idOrder", nullable = false)
   private Order order;
-
-  @Column(name = "quantity", nullable = false)
-  private Integer quantity;
-
-  @Column(name = "unitPrice", nullable = false, precision = 15, scale = 2)
-  private BigDecimal unitPrice;
 
   public OrderItem() {}
 

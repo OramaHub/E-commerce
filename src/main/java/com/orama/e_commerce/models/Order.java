@@ -1,41 +1,39 @@
 package com.orama.e_commerce.models;
 
+import com.orama.e_commerce.enums.OrderStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "Order_cart")
+@Table(name = "tb_order")
 public class Order {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idOrder")
   private Long id;
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "Cart_idCart", nullable = false, unique = true)
-  private Cart cart;
-
-  @Column(name = "orderNumber", length = 50, unique = true)
+  @Column(name = "order_number", length = 50, unique = true)
   private String orderNumber;
 
-  @Column(name = "orderDate")
-  private LocalDate orderDate;
+  @CreationTimestamp
+  @Column(name = "order_date")
+  private Instant orderDate;
 
-  //  @Enumerated(EnumType.STRING)
-  //  @Column(name = "status_order", length = 20)
-  /// /  private OrderStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status_order", length = 20, nullable = false)
+  private OrderStatus status;
 
-  @Column(name = "subtotal", precision = 15, scale = 2)
+  @Column(precision = 15, scale = 2)
   private BigDecimal subtotal;
 
-  @Column(name = "discount", precision = 15, scale = 2)
+  @Column(precision = 15, scale = 2)
   private BigDecimal discount;
 
-  @Column(name = "total", precision = 15, scale = 2)
+  @Column(precision = 15, scale = 2)
   private BigDecimal total;
 
   @OneToMany(
@@ -44,6 +42,14 @@ public class Order {
       cascade = CascadeType.ALL,
       orphanRemoval = true)
   private List<OrderItem> items;
+
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "cart_id", nullable = false, unique = true)
+  private Cart cart;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "client_id", nullable = false)
+  private Client client;
 
   public Order() {}
 
@@ -75,21 +81,21 @@ public class Order {
     this.orderNumber = orderNumber;
   }
 
-  public LocalDate getOrderDate() {
+  public Instant getOrderDate() {
     return orderDate;
   }
 
-  public void setOrderDate(LocalDate orderDate) {
+  public void setOrderDate(Instant orderDate) {
     this.orderDate = orderDate;
   }
 
-  //  public OrderStatus getStatus() {
-  //    return status;
-  //  }
-  //
-  //  public void setStatus(OrderStatus status) {
-  //    this.status = status;
-  //  }
+  public OrderStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(OrderStatus status) {
+    this.status = status;
+  }
 
   public BigDecimal getSubtotal() {
     return subtotal;
@@ -113,6 +119,14 @@ public class Order {
 
   public void setTotal(BigDecimal total) {
     this.total = total;
+  }
+
+  public Client getClient() {
+    return client;
+  }
+
+  public void setClient(Client client) {
+    this.client = client;
   }
 
   public List<OrderItem> getItems() {

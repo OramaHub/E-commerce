@@ -7,27 +7,26 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "Client")
+@Table(name = "tb_client")
 public class Client {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idClient")
   private Long id;
 
-  @Column(name = "Name", nullable = false, length = 150)
+  @Column(nullable = false, length = 150)
   private String name;
 
-  @Column(name = "email", length = 180, unique = true)
+  @Column(length = 180, unique = true)
   private String email;
 
   @Column(name = "password_hash", nullable = false, length = 255)
   private String passwordHash;
 
-  @Column(name = "cpf", length = 20)
+  @Column(length = 20)
   private String cpf;
 
-  @Column(name = "phone", length = 30)
+  @Column(length = 30)
   private String phone;
 
   @Column(name = "active")
@@ -44,6 +43,9 @@ public class Client {
 
   @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
   private List<Cart> carts;
+
+  @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
+  private List<Order> orders;
 
   public Client() {}
 
@@ -133,6 +135,14 @@ public class Client {
 
   public void setCarts(List<Cart> carts) {
     this.carts = carts;
+  }
+
+  public List<Order> getOrders() {
+    return orders;
+  }
+
+  public void setOrders(List<Order> orders) {
+    this.orders = orders;
   }
 
   @Override

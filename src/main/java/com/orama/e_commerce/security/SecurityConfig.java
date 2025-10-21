@@ -23,15 +23,11 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final UserDetailsService userDetailsService;
-  private final PasswordEncoder passwordEncoder;
 
   public SecurityConfig(
-      JwtAuthenticationFilter jwtAuthenticationFilter,
-      UserDetailsService userDetailsService,
-      PasswordEncoder passwordEncoder) {
+      JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.userDetailsService = userDetailsService;
-    this.passwordEncoder = passwordEncoder;
   }
 
   @Bean
@@ -39,20 +35,20 @@ public class SecurityConfig {
     http.csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/**", "/api/clients")
+                auth.requestMatchers("/api/auth/**", "/api/clients", "/api/orders")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authenticationProvider(authenticationProvider())
+        .authenticationProvider(authenticationProvider(passwordEncoder()))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
 
   @Bean
-  public AuthenticationProvider authenticationProvider() {
+  public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
     authProvider.setUserDetailsService(userDetailsService);
     authProvider.setPasswordEncoder(passwordEncoder);
