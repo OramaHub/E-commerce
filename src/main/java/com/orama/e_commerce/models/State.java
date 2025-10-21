@@ -1,23 +1,25 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "state")
+@Table(name = "tb_state")
 public class State {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idstate")
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "country_idcountry", nullable = false)
+  @JoinColumn(name = "country_id", nullable = false)
   private Country country;
 
-  @Column(name = "name", nullable = false, length = 150)
+  @Column(nullable = false, length = 150)
   private String name;
 
   @Column(name = "sgl", length = 10)
@@ -25,6 +27,14 @@ public class State {
 
   @OneToMany(mappedBy = "state", fetch = FetchType.LAZY)
   private List<City> cities;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   public State() {}
 
@@ -70,6 +80,22 @@ public class State {
 
   public void setCities(List<City> cities) {
     this.cities = cities;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override

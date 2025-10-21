@@ -1,39 +1,50 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
+import java.time.Instant;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "Address")
-public class Address {
+@Table(name = "tb_address")
+public class Address implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idAddress")
   private Long id;
+
+  @Column(nullable = false, length = 255)
+  private String street;
+
+  @Column(nullable = true, length = 20)
+  private String number;
+
+  @Column(length = 100)
+  private String complement;
+
+  @Column(nullable = false, length = 100)
+  private String district;
+
+  @Column(name = "zip_code", nullable = false, length = 20)
+  private String zipCode;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "client_id", nullable = false)
   private Client client;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "City_idCity", nullable = false)
+  @JoinColumn(name = "city_id", nullable = false)
   private City city;
-
-  @Column(name = "street", nullable = false, length = 255)
-  private String street;
-
-  @Column(name = "number", nullable = true, length = 20)
-  private String number;
-
-  @Column(name = "complement", length = 100)
-  private String complement;
-
-  @Column(name = "district", nullable = false, length = 100)
-  private String district;
-
-  @Column(name = "zip_code", nullable = false, length = 20)
-  private String zipCode;
 
   public Address() {}
 
@@ -103,6 +114,22 @@ public class Address {
 
   public void setZipCode(String zipCode) {
     this.zipCode = zipCode;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override

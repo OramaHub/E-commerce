@@ -1,23 +1,33 @@
 package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "ProductImage")
+@Table(name = "tb_product_image")
 public class ProductImage {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "idProductImage")
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "Product_idProduct", nullable = false)
+  @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
-  @Column(name = "url", nullable = false, length = 1000)
+  @Column(name = "image_url", nullable = false, length = 1000)
   private String url;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
   public ProductImage() {}
 
@@ -47,6 +57,22 @@ public class ProductImage {
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override
