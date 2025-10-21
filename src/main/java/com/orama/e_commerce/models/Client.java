@@ -23,7 +23,7 @@ public class Client {
   @Column(name = "password_hash", nullable = false, length = 255)
   private String passwordHash;
 
-  @Column(length = 20)
+  @Column(length = 20, unique = true)
   private String cpf;
 
   @Column(length = 30)
