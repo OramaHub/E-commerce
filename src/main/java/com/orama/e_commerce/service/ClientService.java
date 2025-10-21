@@ -64,7 +64,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (!passwordEncoder.matches(dto.currentPassword(), client.getPasswordHash())) {
-      throw new RuntimeException("Current password is incorrect.");
+      throw new InvalidPasswordException("Current password is incorrect.");
     }
 
     client.setPasswordHash(passwordEncoder.encode(dto.newPassword()));
@@ -101,7 +101,7 @@ public class ClientService {
     }
   }
 
-  private Client findById(Long id) {
+  public Client findById(Long id) {
     return clientRepository
         .findById(id)
         .orElseThrow(() -> new ClientNotFoundException("Client not found with id " + id));
