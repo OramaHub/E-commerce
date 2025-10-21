@@ -10,6 +10,8 @@ import com.orama.e_commerce.models.Product;
 import com.orama.e_commerce.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +23,30 @@ public class ProductService {
   public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
     this.productRepository = productRepository;
     this.productMapper = productMapper;
+  }
+
+  public ProductResponseDto getById(Long id) {
+    Product product = findById(id);
+
+    if (!product.getActive()) {
+      throw new ProductNotFoundException("Product not found or inactive.");
+    }
+
+    return productMapper.toResponseDto(product);
+  }
+
+  public Page<ProductResponseDto> getAllActiveProducts(Pageable pageable) {
+    return productRepository.findByActiveTrue(pageable).map(productMapper::toResponseDto);
+  }
+
+  public Page<ProductResponseDto> getAll(Pageable pageable) {
+    return productRepository.findAll(pageable).map(productMapper::toResponseDto);
+  }
+
+  public Page<ProductResponseDto> getAllByName(String name, Pageable pageable) {
+    return productRepository
+        .findByNameContainingIgnoreCaseAndActiveTrue(name, pageable)
+        .map(productMapper::toResponseDto);
   }
 
   @Transactional
