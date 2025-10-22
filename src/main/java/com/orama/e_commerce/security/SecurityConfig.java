@@ -37,8 +37,10 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(
                         "/api/auth/**",
+                        "/api/health",
                         "/api/products",
                         "/api/products/{id}",
+                        "/api/carts",
                         "/api/products/name/{name}")
                     .permitAll()
                     .anyRequest()
