@@ -1,11 +1,12 @@
 package com.orama.e_commerce.controller;
 
 import com.orama.e_commerce.dtos.client.ChangePasswordRequestDto;
-import com.orama.e_commerce.dtos.client.ClientRequestDto;
 import com.orama.e_commerce.dtos.client.ClientResponseDto;
 import com.orama.e_commerce.dtos.client.ClientUpdateRequestDto;
 import com.orama.e_commerce.service.ClientService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,11 +22,40 @@ public class ClientController {
     this.clientService = clientService;
   }
 
-  @PostMapping
-  public ResponseEntity<ClientResponseDto> createClient(
-      @Valid @RequestBody ClientRequestDto requestDto) {
-    ClientResponseDto dto = clientService.createClient(requestDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+  @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
+  @GetMapping("/{id}")
+  public ResponseEntity<ClientResponseDto> findById(@PathVariable Long id) {
+    ClientResponseDto clientResponseDto = clientService.getById(id);
+    return new ResponseEntity<>(clientResponseDto, HttpStatus.OK);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping
+  public ResponseEntity<Page<ClientResponseDto>> findAllActiveClients(Pageable pageable) {
+    Page<ClientResponseDto> page = clientService.getAllActiveClients(pageable);
+    return new ResponseEntity<>(page, HttpStatus.OK);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping("/email")
+  public ResponseEntity<ClientResponseDto> findByEmail(@RequestParam String email) {
+    ClientResponseDto dto = clientService.getByEmail(email);
+    return new ResponseEntity<>(dto, HttpStatus.OK);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping("/cpf")
+  public ResponseEntity<ClientResponseDto> findByCpf(@RequestParam String cpf) {
+    ClientResponseDto dto = clientService.getByCpf(cpf);
+    return new ResponseEntity<>(dto, HttpStatus.OK);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping("/role")
+  public ResponseEntity<Page<ClientResponseDto>> findAllByRole(
+      @RequestParam String role, Pageable pageable) {
+    Page<ClientResponseDto> page = clientService.getAllByRole(role, pageable);
+    return new ResponseEntity<>(page, HttpStatus.OK);
   }
 
   @PreAuthorize("#id == authentication.details['id'] or hasRole('ADMIN')")
