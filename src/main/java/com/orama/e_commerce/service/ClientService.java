@@ -7,9 +7,12 @@ import com.orama.e_commerce.dtos.client.ClientUpdateRequestDto;
 import com.orama.e_commerce.enums.UserRole;
 import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.mapper.ClientMapper;
+import com.orama.e_commerce.mapper.ProductMapper;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.ClientRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,10 +26,50 @@ public class ClientService {
   public ClientService(
       ClientRepository clientRepository,
       ClientMapper clientMapper,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      ProductMapper productMapper) {
     this.clientRepository = clientRepository;
     this.clientMapper = clientMapper;
     this.passwordEncoder = passwordEncoder;
+  }
+
+  public ClientResponseDto getById(Long id) {
+    Client client = findById(id);
+    return clientMapper.toResponseDto(client);
+  }
+
+  public Page<ClientResponseDto> getAllActiveClients(Pageable pageable) {
+    return clientRepository.findByActiveTrue(pageable).map(clientMapper::toResponseDto);
+  }
+
+  public ClientResponseDto getByEmail(String email) {
+    Client client =
+        clientRepository
+            .findByEmail(email)
+            .orElseThrow(
+                () -> new ClientNotFoundException("Client not found with email: " + email));
+    return clientMapper.toResponseDto(client);
+  }
+
+  public ClientResponseDto getByCpf(String cpf) {
+    Client client =
+        clientRepository
+            .findByCpf(cpf)
+            .orElseThrow(() -> new ClientNotFoundException("Client not found with CPF: " + cpf));
+    return clientMapper.toResponseDto(client);
+  }
+
+  public Page<ClientResponseDto> getAllByRole(String role, Pageable pageable) {
+    UserRole roleEnum;
+    try {
+      roleEnum = UserRole.valueOf(role.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid role: " + role);
+    }
+
+    Page<Client> clients = clientRepository.findByRole(roleEnum, pageable);
+
+    return clients.map(clientMapper::toResponseDto);
   }
 
   @Transactional
