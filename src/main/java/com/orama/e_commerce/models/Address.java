@@ -3,6 +3,7 @@ package com.orama.e_commerce.models;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,6 +21,9 @@ public class Address implements Serializable {
 
   @Column(nullable = true, length = 20)
   private String number;
+
+  @Column(nullable = false)
+  private Boolean defaultAddress = false;
 
   @Column(length = 100)
   private String complement;
@@ -45,6 +49,9 @@ public class Address implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "city_id", nullable = false)
   private City city;
+
+  @OneToMany(mappedBy = "deliveryAddress", fetch = FetchType.LAZY)
+  private List<Order> orders;
 
   public Address() {}
 
@@ -92,6 +99,14 @@ public class Address implements Serializable {
     this.number = number;
   }
 
+  public Boolean getDefaultAddress() {
+    return defaultAddress;
+  }
+
+  public void setDefaultAddress(Boolean defaultAddress) {
+    this.defaultAddress = defaultAddress;
+  }
+
   public String getComplement() {
     return complement;
   }
@@ -130,6 +145,14 @@ public class Address implements Serializable {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public List<Order> getOrders() {
+    return orders;
+  }
+
+  public void setOrders(List<Order> orders) {
+    this.orders = orders;
   }
 
   @Override
