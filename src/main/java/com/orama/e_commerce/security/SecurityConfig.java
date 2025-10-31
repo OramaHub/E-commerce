@@ -39,7 +39,8 @@ public class SecurityConfig {
                         "/api/auth/**",
                         "/api/products",
                         "/api/products/{id}",
-                        "/api/products/name/{name}")
+                        "/api/products/name/{name}",
+                        "/product/checkout")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
