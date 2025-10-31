@@ -26,6 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: ecommerce-app
     environment:
+      STRIPE_SECRET_KEY: sk_test_51SOJtf05HSzULbfqQ3aLimoKzAeoNQYtPlN4dZyNftYmqfVZbTQ43Vlt6xRsXfau6l9HQLvN8vjICkyp2yRogOQZ00SeGzutLk
       POSTGRES_HOST: jdbc:postgresql://postgres:5432/ecommerce_db
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: postgres
