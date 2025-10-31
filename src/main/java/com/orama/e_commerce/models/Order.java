@@ -51,6 +51,10 @@ public class Order {
   @JoinColumn(name = "client_id", nullable = false)
   private Client client;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "delivery_adress_id", nullable = false)
+  private Address deliveryAddress;
+
   public Order() {}
 
   public Order(Long id) {
@@ -127,6 +131,14 @@ public class Order {
 
   public void setClient(Client client) {
     this.client = client;
+  }
+
+  public Address getDeliveryAddress() {
+    return deliveryAddress;
+  }
+
+  public void setDeliveryAddress(Address deliveryAddress) {
+    this.deliveryAddress = deliveryAddress;
   }
 
   public List<OrderItem> getItems() {

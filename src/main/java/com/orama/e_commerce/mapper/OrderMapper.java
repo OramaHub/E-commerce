@@ -16,11 +16,13 @@ public interface OrderMapper {
   @Mapping(target = "cart.id", source = "cartId")
   @Mapping(target = "orderNumber", ignore = true)
   @Mapping(target = "orderDate", ignore = true)
+  @Mapping(target = "status", ignore = true)
   @Mapping(target = "subtotal", ignore = true)
   @Mapping(target = "total", ignore = true)
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)
+  @Mapping(target = "status", ignore = true)
   Order toEntity(CreateOrderRequestDto dto);
 
   @Mapping(target = "id", ignore = true)

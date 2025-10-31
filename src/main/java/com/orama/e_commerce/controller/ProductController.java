@@ -39,9 +39,9 @@ public class ProductController {
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 
-  @GetMapping("/name/{name}")
+  @GetMapping("/name")
   public ResponseEntity<Page<ProductResponseDto>> findAllByName(
-      @PathVariable String name, Pageable pageable) {
+      @RequestParam String name, Pageable pageable) {
     Page<ProductResponseDto> page = productService.getAllByName(name, pageable);
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
