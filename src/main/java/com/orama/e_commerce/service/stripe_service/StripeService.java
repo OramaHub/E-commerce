@@ -2,7 +2,6 @@ package com.orama.e_commerce.service.stripe_service;
 
 import com.orama.e_commerce.dtos.stripe_entities.ProductRequest;
 import com.orama.e_commerce.dtos.stripe_entities.StripeResponse;
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -13,13 +12,9 @@ public class StripeService {
 
   public StripeResponse checkoutProducts(ProductRequest productRequest) {
 
-    // Log para debug
-    System.out.println("🔵 Iniciando criação de sessão Stripe...");
-    System.out.println("🔑 API Key configurada: " + (Stripe.apiKey != null ? "SIM" : "NÃO"));
-    System.out.println("📦 Produto: " + productRequest.name());
-    System.out.println("💰 Valor: " + productRequest.amount());
-    System.out.println("📊 Quantidade: " + productRequest.quantity());
-    System.out.println("💵 Moeda: " + productRequest.currency());
+    // Converter valor de reais para centavos
+    Long amountInCents =
+        productRequest.amount().multiply(new java.math.BigDecimal("100")).longValue();
 
     SessionCreateParams.LineItem.PriceData.ProductData productData =
         SessionCreateParams.LineItem.PriceData.ProductData.builder()
@@ -29,7 +24,7 @@ public class StripeService {
     SessionCreateParams.LineItem.PriceData priceData =
         SessionCreateParams.LineItem.PriceData.builder()
             .setCurrency(productRequest.currency() != null ? productRequest.currency() : "USD")
-            .setUnitAmount(productRequest.amount())
+            .setUnitAmount(amountInCents)
             .setProductData(productData)
             .build();
 
@@ -42,15 +37,14 @@ public class StripeService {
     SessionCreateParams params =
         SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
-            .setSuccessUrl("http://localhost:8080/success")
-            .setCancelUrl("http://localhost:8080/cancel")
+            .setSuccessUrl("https://example.com/success?session_id={CHECKOUT_SESSION_ID}")
+            .setCancelUrl("https://example.com/cancel")
             .addLineItem(lineItem)
             .build();
 
     try {
-      System.out.println("🚀 Chamando API do Stripe...");
       Session session = Session.create(params);
-      System.out.println("✅ Sessão criada com sucesso! ID: " + session.getId());
+      System.out.println(session.getId());
 
       return StripeResponse.builder()
           .status("SUCCESS")
