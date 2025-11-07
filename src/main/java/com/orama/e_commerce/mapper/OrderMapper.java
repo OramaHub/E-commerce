@@ -22,7 +22,6 @@ public interface OrderMapper {
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)
-  @Mapping(target = "status", ignore = true)
   Order toEntity(CreateOrderRequestDto dto);
 
   @Mapping(target = "id", ignore = true)
