@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    clean-disabled: true
+    baseline-on-migrate: false
+
+logging:
+  level:
+    root: WARN
+    com.orama.e_commerce: INFO
+    org.hibernate: WARN
+    org.flywaydb: INFO
