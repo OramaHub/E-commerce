@@ -25,3 +25,6 @@ admin:
   name: ${ADMIN_NAME}
   cpf: ${ADMIN_CPF}
   phone: ${ADMIN_PHONE}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}

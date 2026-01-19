@@ -22,6 +22,9 @@ public class City {
   @Column(nullable = false, length = 150)
   private String name;
 
+  @Column(name = "ibge_code", unique = true, length = 7)
+  private String ibgeCode;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -61,6 +64,14 @@ public class City {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getIbgeCode() {
+    return ibgeCode;
+  }
+
+  public void setIbgeCode(String ibgeCode) {
+    this.ibgeCode = ibgeCode;
   }
 
   public Instant getCreatedAt() {
