@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,7 @@ public class OrderController {
     this.orderService = orderService;
   }
 
+  @PreAuthorize("authentication.details['id'] != null")
   @PostMapping
   public ResponseEntity<OrderResponseDto> createOrder(
       @Valid @RequestBody CreateOrderRequestDto requestDto) {
@@ -27,30 +29,35 @@ public class OrderController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/{id}")
   public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id) {
     OrderResponseDto dto = orderService.getOrderById(id);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
     List<OrderResponseDto> orders = orderService.getAllOrders();
     return ResponseEntity.ok(orders);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @GetMapping("/client/{clientId}")
   public ResponseEntity<List<OrderResponseDto>> getOrdersByClient(@PathVariable Long clientId) {
     List<OrderResponseDto> orders = orderService.getOrdersByClient(clientId);
     return ResponseEntity.ok(orders);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/number/{orderNumber}")
   public ResponseEntity<OrderResponseDto> getOrderByOrderNumber(@PathVariable String orderNumber) {
     OrderResponseDto dto = orderService.getOrderByOrderNumber(orderNumber);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/status")
   public ResponseEntity<OrderResponseDto> updateOrderStatus(
       @PathVariable Long id, @RequestParam OrderStatus status) {
@@ -58,6 +65,7 @@ public class OrderController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN') or authentication.details['id'] != null")
   @PatchMapping("/{id}/cancel")
   public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable Long id) {
     OrderResponseDto dto = orderService.cancelOrder(id);

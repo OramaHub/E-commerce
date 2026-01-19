@@ -22,7 +22,6 @@ public class ProductImageController {
     this.productImageService = productImageService;
   }
 
-  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   public ResponseEntity<Page<ProductImageResponseDto>> getImagesByProduct(
       @PathVariable Long productId, Pageable pageable) {

@@ -1,5 +1,6 @@
 package com.orama.e_commerce.service;
 
+import com.orama.e_commerce.dtos.auth.AuthRegisterResponseDto;
 import com.orama.e_commerce.dtos.auth.AuthResponseDto;
 import com.orama.e_commerce.dtos.auth.LoginRequestDto;
 import com.orama.e_commerce.dtos.client.ClientRequestDto;
@@ -51,13 +52,9 @@ public class AuthService {
     return new AuthResponseDto(token, jwtService.getExpirationTime());
   }
 
-  public AuthResponseDto register(ClientRequestDto dto) {
+  public AuthRegisterResponseDto register(ClientRequestDto dto) {
     ClientResponseDto createdClientDto = clientService.createClient(dto);
-    Client createdClient = clientService.findById(createdClientDto.id());
 
-    UserDetails userDetails = userDetailsService.loadUserByUsername(createdClient.getEmail());
-    String token = jwtService.generateToken(userDetails, createdClient.getId());
-
-    return new AuthResponseDto(token, jwtService.getExpirationTime());
+    return new AuthRegisterResponseDto(createdClientDto.email(), createdClientDto.role().name());
   }
 }
