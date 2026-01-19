@@ -15,12 +15,16 @@ public interface AddressMapper {
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "city", ignore = true)
   @Mapping(target = "orders", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
   Address toEntity(AddressRequestDto requestDto);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "city", ignore = true)
   @Mapping(target = "orders", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
   void updateEntity(AddressUpdateRequestDto requestDto, @MappingTarget Address address);
 
   @Mapping(target = "cityId", source = "city.id")
