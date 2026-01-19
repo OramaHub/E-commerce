@@ -52,7 +52,7 @@ public class AddressService {
 
   @Transactional
   public AddressResponseDto updateAddress(
-          Long id, AddressUpdateRequestDto requestDto, Long clientId) {
+      Long id, AddressUpdateRequestDto requestDto, Long clientId) {
 
     Address address = findById(id);
 

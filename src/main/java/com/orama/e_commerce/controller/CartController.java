@@ -37,8 +37,7 @@ public class CartController {
   @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PostMapping("/client/{clientId}/items")
   public ResponseEntity<CartResponseDto> addItemToCart(
-          @PathVariable Long clientId,
-          @Valid @RequestBody AddItemToCartRequestDto requestDto) {
+      @PathVariable Long clientId, @Valid @RequestBody AddItemToCartRequestDto requestDto) {
     CartResponseDto dto = cartService.addItemToCart(clientId, requestDto);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
@@ -46,9 +45,9 @@ public class CartController {
   @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PutMapping("/client/{clientId}/items/{cartItemId}")
   public ResponseEntity<CartResponseDto> updateCartItemQuantity(
-          @PathVariable Long clientId,
-          @PathVariable Long cartItemId,
-          @Valid @RequestBody UpdateCartItemRequestDto requestDto) {
+      @PathVariable Long clientId,
+      @PathVariable Long cartItemId,
+      @Valid @RequestBody UpdateCartItemRequestDto requestDto) {
     CartResponseDto dto = cartService.updateCartItemQuantity(clientId, cartItemId, requestDto);
     return ResponseEntity.ok(dto);
   }
@@ -56,8 +55,7 @@ public class CartController {
   @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @DeleteMapping("/client/{clientId}/items/{cartItemId}")
   public ResponseEntity<CartResponseDto> removeItemFromCart(
-          @PathVariable Long clientId,
-          @PathVariable Long cartItemId) {
+      @PathVariable Long clientId, @PathVariable Long cartItemId) {
     CartResponseDto dto = cartService.removeItemFromCart(clientId, cartItemId);
     return ResponseEntity.ok(dto);
   }

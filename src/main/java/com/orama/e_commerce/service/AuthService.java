@@ -55,9 +55,6 @@ public class AuthService {
   public AuthRegisterResponseDto register(ClientRequestDto dto) {
     ClientResponseDto createdClientDto = clientService.createClient(dto);
 
-    return new AuthRegisterResponseDto(
-            createdClientDto.email(),
-            createdClientDto.role().name()
-    );
+    return new AuthRegisterResponseDto(createdClientDto.email(), createdClientDto.role().name());
   }
 }

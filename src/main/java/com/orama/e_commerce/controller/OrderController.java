@@ -24,7 +24,7 @@ public class OrderController {
   @PreAuthorize("authentication.details['id'] != null")
   @PostMapping
   public ResponseEntity<OrderResponseDto> createOrder(
-          @Valid @RequestBody CreateOrderRequestDto requestDto) {
+      @Valid @RequestBody CreateOrderRequestDto requestDto) {
     OrderResponseDto dto = orderService.createOrder(requestDto);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
@@ -60,7 +60,7 @@ public class OrderController {
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/status")
   public ResponseEntity<OrderResponseDto> updateOrderStatus(
-          @PathVariable Long id, @RequestParam OrderStatus status) {
+      @PathVariable Long id, @RequestParam OrderStatus status) {
     OrderResponseDto dto = orderService.updateOrderStatus(id, status);
     return ResponseEntity.ok(dto);
   }
