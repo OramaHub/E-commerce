@@ -7,6 +7,7 @@ import com.orama.e_commerce.service.CartService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,41 +20,49 @@ public class CartController {
     this.cartService = cartService;
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @GetMapping("/client/{clientId}/active")
   public ResponseEntity<CartResponseDto> getOrCreateActiveCart(@PathVariable Long clientId) {
     CartResponseDto dto = cartService.getOrCreateActiveCart(clientId);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/{id}")
   public ResponseEntity<CartResponseDto> getCartById(@PathVariable Long id) {
     CartResponseDto dto = cartService.getCartById(id);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PostMapping("/client/{clientId}/items")
   public ResponseEntity<CartResponseDto> addItemToCart(
-      @PathVariable Long clientId, @Valid @RequestBody AddItemToCartRequestDto requestDto) {
+          @PathVariable Long clientId,
+          @Valid @RequestBody AddItemToCartRequestDto requestDto) {
     CartResponseDto dto = cartService.addItemToCart(clientId, requestDto);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PutMapping("/client/{clientId}/items/{cartItemId}")
   public ResponseEntity<CartResponseDto> updateCartItemQuantity(
-      @PathVariable Long clientId,
-      @PathVariable Long cartItemId,
-      @Valid @RequestBody UpdateCartItemRequestDto requestDto) {
+          @PathVariable Long clientId,
+          @PathVariable Long cartItemId,
+          @Valid @RequestBody UpdateCartItemRequestDto requestDto) {
     CartResponseDto dto = cartService.updateCartItemQuantity(clientId, cartItemId, requestDto);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @DeleteMapping("/client/{clientId}/items/{cartItemId}")
   public ResponseEntity<CartResponseDto> removeItemFromCart(
-      @PathVariable Long clientId, @PathVariable Long cartItemId) {
+          @PathVariable Long clientId,
+          @PathVariable Long cartItemId) {
     CartResponseDto dto = cartService.removeItemFromCart(clientId, cartItemId);
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @DeleteMapping("/client/{clientId}/clear")
   public ResponseEntity<Void> clearCart(@PathVariable Long clientId) {
     cartService.clearCart(clientId);

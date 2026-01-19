@@ -1,5 +1,6 @@
 package com.orama.e_commerce.controller;
 
+import com.orama.e_commerce.dtos.auth.AuthRegisterResponseDto;
 import com.orama.e_commerce.dtos.auth.AuthResponseDto;
 import com.orama.e_commerce.dtos.auth.LoginRequestDto;
 import com.orama.e_commerce.dtos.client.ClientRequestDto;
@@ -29,9 +30,9 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<AuthResponseDto> register(
+  public ResponseEntity<AuthRegisterResponseDto> register(
       @RequestBody @Valid ClientRequestDto registerDto) {
-    AuthResponseDto tokenResponse = authService.register(registerDto);
+    AuthRegisterResponseDto tokenResponse = authService.register(registerDto);
     return ResponseEntity.status(HttpStatus.CREATED).body(tokenResponse);
   }
 }

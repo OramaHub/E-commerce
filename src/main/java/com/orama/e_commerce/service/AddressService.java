@@ -23,6 +23,10 @@ public class AddressService {
     this.addressMapper = addressMapper;
   }
 
+  public boolean isOwner(Long addressId, Long clientId) {
+    return addressRepository.existsByIdAndClientId(addressId, clientId);
+  }
+
   @Transactional
   public AddressResponseDto createAddress(AddressRequestDto requestDto, Long clientId) {
     Address address = addressMapper.toEntity(requestDto);
@@ -48,7 +52,7 @@ public class AddressService {
 
   @Transactional
   public AddressResponseDto updateAddress(
-      Long id, AddressUpdateRequestDto requestDto, Long clientId) {
+          Long id, AddressUpdateRequestDto requestDto, Long clientId) {
 
     Address address = findById(id);
 
@@ -101,7 +105,6 @@ public class AddressService {
   public void deleteAddress(Long id, Long clientId) {
     Address address = findById(id);
 
-    // Valida se o endereço pertence ao cliente
     if (!address.getClient().getId().equals(clientId)) {
       throw new RuntimeException("You don't have permission to delete this address");
     }
