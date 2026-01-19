@@ -1,8 +1,8 @@
 spring:
   application:
     name: e-commerce
-  server:
-    port: 8081
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
     url: ${POSTGRES_HOST}
     username: ${POSTGRES_USERNAME}
@@ -10,10 +10,17 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: 8081
 
 jwt:
   secret: ${JWT_SECRET}
