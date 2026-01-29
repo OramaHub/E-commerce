@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.orama.e_commerce.dtos.auth.AuthRegisterResponseDto;
 import com.orama.e_commerce.dtos.auth.AuthResponseDto;
 import com.orama.e_commerce.dtos.auth.LoginRequestDto;
 import com.orama.e_commerce.dtos.client.ClientRequestDto;
@@ -109,12 +110,11 @@ class AuthServiceTest {
     when(jwtService.generateToken(userDetails, 1L)).thenReturn("jwt-token");
     when(jwtService.getExpirationTime()).thenReturn(3600000L);
 
-    AuthResponseDto result = authService.register(requestDto);
+    AuthRegisterResponseDto result = authService.register(requestDto);
 
     assertNotNull(result);
-    assertEquals("jwt-token", result.token());
-    assertEquals("Bearer", result.type());
-    assertEquals(3600000L, result.expiresIn());
+    assertEquals("joao@email.com", result.email());
+    assertEquals("USER", result.role());
     verify(clientService).createClient(requestDto);
   }
 }
