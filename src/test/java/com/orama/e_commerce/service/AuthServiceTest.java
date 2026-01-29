@@ -105,10 +105,6 @@ class AuthServiceTest {
             "João Silva", "joao@email.com", "password123", "12345678901", "11999999999");
 
     when(clientService.createClient(requestDto)).thenReturn(clientResponseDto);
-    when(clientService.findById(1L)).thenReturn(client);
-    when(userDetailsService.loadUserByUsername("joao@email.com")).thenReturn(userDetails);
-    when(jwtService.generateToken(userDetails, 1L)).thenReturn("jwt-token");
-    when(jwtService.getExpirationTime()).thenReturn(3600000L);
 
     AuthRegisterResponseDto result = authService.register(requestDto);
 

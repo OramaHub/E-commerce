@@ -30,3 +30,11 @@ admin:
 
 stripe:
   secret-key: sk_test_fake_key_for_tests
+
+rate-limit:
+  default-requests-per-minute: 100
+  endpoints:
+    "POST:/api/auth/login":
+      requests-per-minute: 20
+    "POST:/api/auth/register":
+      requests-per-minute: 10
