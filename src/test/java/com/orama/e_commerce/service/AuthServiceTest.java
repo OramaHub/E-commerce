@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.orama.e_commerce.dtos.auth.AuthRegisterResponseDto;
 import com.orama.e_commerce.dtos.auth.AuthResponseDto;
 import com.orama.e_commerce.dtos.auth.LoginRequestDto;
 import com.orama.e_commerce.dtos.client.ClientRequestDto;
@@ -104,17 +105,12 @@ class AuthServiceTest {
             "João Silva", "joao@email.com", "password123", "12345678901", "11999999999");
 
     when(clientService.createClient(requestDto)).thenReturn(clientResponseDto);
-    when(clientService.findById(1L)).thenReturn(client);
-    when(userDetailsService.loadUserByUsername("joao@email.com")).thenReturn(userDetails);
-    when(jwtService.generateToken(userDetails, 1L)).thenReturn("jwt-token");
-    when(jwtService.getExpirationTime()).thenReturn(3600000L);
 
-    AuthResponseDto result = authService.register(requestDto);
+    AuthRegisterResponseDto result = authService.register(requestDto);
 
     assertNotNull(result);
-    assertEquals("jwt-token", result.token());
-    assertEquals("Bearer", result.type());
-    assertEquals(3600000L, result.expiresIn());
+    assertEquals("joao@email.com", result.email());
+    assertEquals("USER", result.role());
     verify(clientService).createClient(requestDto);
   }
 }

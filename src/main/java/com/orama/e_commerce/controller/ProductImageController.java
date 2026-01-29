@@ -3,6 +3,8 @@ package com.orama.e_commerce.controller;
 import com.orama.e_commerce.dtos.product_image.ProductImageRequestDto;
 import com.orama.e_commerce.dtos.product_image.ProductImageResponseDto;
 import com.orama.e_commerce.service.ProductImageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products/{productId}/images")
+@Tag(name = "Imagens de Produto")
 public class ProductImageController {
 
   private final ProductImageService productImageService;
@@ -23,6 +26,7 @@ public class ProductImageController {
   }
 
   @GetMapping
+  @Operation(summary = "Lista imagens de um produto")
   public ResponseEntity<Page<ProductImageResponseDto>> getImagesByProduct(
       @PathVariable Long productId, Pageable pageable) {
     Page<ProductImageResponseDto> images =
@@ -32,6 +36,7 @@ public class ProductImageController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping("/single")
+  @Operation(summary = "Adiciona uma imagem ao produto")
   public ResponseEntity<ProductImageResponseDto> addImageToProduct(
       @PathVariable Long productId,
       @RequestBody @Valid ProductImageRequestDto productImageRequestDto) {
@@ -42,6 +47,7 @@ public class ProductImageController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping("/batch")
+  @Operation(summary = "Adiciona múltiplas imagens ao produto")
   public ResponseEntity<List<ProductImageResponseDto>> addImagesToProduct(
       @PathVariable Long productId,
       @RequestBody @Valid List<ProductImageRequestDto> productImagesRequestDto) {
@@ -52,6 +58,7 @@ public class ProductImageController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @DeleteMapping("/{imageId}")
+  @Operation(summary = "Remove uma imagem do produto")
   public ResponseEntity<Void> deleteProductImage(
       @PathVariable Long productId, @PathVariable Long imageId) {
     productImageService.deleteProductImage(productId, imageId);

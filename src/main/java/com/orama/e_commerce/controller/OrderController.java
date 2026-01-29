@@ -4,6 +4,8 @@ import com.orama.e_commerce.dtos.order.CreateOrderRequestDto;
 import com.orama.e_commerce.dtos.order.OrderResponseDto;
 import com.orama.e_commerce.enums.OrderStatus;
 import com.orama.e_commerce.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
+@Tag(name = "Pedidos")
 public class OrderController {
 
   private final OrderService orderService;
@@ -23,6 +26,7 @@ public class OrderController {
 
   @PreAuthorize("authentication.details['id'] != null")
   @PostMapping
+  @Operation(summary = "Cria um pedido a partir do carrinho do cliente")
   public ResponseEntity<OrderResponseDto> createOrder(
       @Valid @RequestBody CreateOrderRequestDto requestDto) {
     OrderResponseDto dto = orderService.createOrder(requestDto);
@@ -31,6 +35,7 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/{id}")
+  @Operation(summary = "Busca pedido pelo id")
   public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id) {
     OrderResponseDto dto = orderService.getOrderById(id);
     return ResponseEntity.ok(dto);
@@ -38,6 +43,7 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
+  @Operation(summary = "Lista todos os pedidos")
   public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
     List<OrderResponseDto> orders = orderService.getAllOrders();
     return ResponseEntity.ok(orders);
@@ -45,6 +51,7 @@ public class OrderController {
 
   @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @GetMapping("/client/{clientId}")
+  @Operation(summary = "Lista pedidos de um cliente")
   public ResponseEntity<List<OrderResponseDto>> getOrdersByClient(@PathVariable Long clientId) {
     List<OrderResponseDto> orders = orderService.getOrdersByClient(clientId);
     return ResponseEntity.ok(orders);
@@ -52,6 +59,7 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/number/{orderNumber}")
+  @Operation(summary = "Busca pedido pelo número")
   public ResponseEntity<OrderResponseDto> getOrderByOrderNumber(@PathVariable String orderNumber) {
     OrderResponseDto dto = orderService.getOrderByOrderNumber(orderNumber);
     return ResponseEntity.ok(dto);
@@ -59,6 +67,7 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/status")
+  @Operation(summary = "Atualiza o status do pedido")
   public ResponseEntity<OrderResponseDto> updateOrderStatus(
       @PathVariable Long id, @RequestParam OrderStatus status) {
     OrderResponseDto dto = orderService.updateOrderStatus(id, status);
@@ -67,6 +76,7 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN') or authentication.details['id'] != null")
   @PatchMapping("/{id}/cancel")
+  @Operation(summary = "Cancela pedido")
   public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable Long id) {
     OrderResponseDto dto = orderService.cancelOrder(id);
     return ResponseEntity.ok(dto);
