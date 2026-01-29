@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,6 +26,7 @@ public class OrderController {
     this.orderService = orderService;
   }
 
+  @PreAuthorize("authentication.details['id'] != null")
   @PostMapping
   @Operation(summary = "Criar pedido", description = "Gera um pedido a partir do carrinho/itens")
   @ApiResponses(
@@ -38,6 +40,7 @@ public class OrderController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/{id}")
   @Operation(summary = "Buscar pedido por ID")
   @ApiResponses(
@@ -50,6 +53,7 @@ public class OrderController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   @Operation(summary = "Listar pedidos")
   @ApiResponses(@ApiResponse(responseCode = "200", description = "Lista de pedidos retornada"))
@@ -58,6 +62,7 @@ public class OrderController {
     return ResponseEntity.ok(orders);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @GetMapping("/client/{clientId}")
   @Operation(summary = "Listar pedidos por cliente")
   @ApiResponses(
@@ -70,6 +75,7 @@ public class OrderController {
     return ResponseEntity.ok(orders);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/number/{orderNumber}")
   @Operation(summary = "Buscar pedido por número")
   @ApiResponses(
@@ -82,6 +88,7 @@ public class OrderController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/status")
   @Operation(summary = "Atualizar status do pedido")
   @ApiResponses(
@@ -96,6 +103,7 @@ public class OrderController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN') or authentication.details['id'] != null")
   @PatchMapping("/{id}/cancel")
   @Operation(summary = "Cancelar pedido")
   @ApiResponses(

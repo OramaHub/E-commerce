@@ -29,7 +29,6 @@ public class ProductImageController {
     this.productImageService = productImageService;
   }
 
-  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   @Operation(summary = "Listar imagens de um produto")
   @ApiResponses(

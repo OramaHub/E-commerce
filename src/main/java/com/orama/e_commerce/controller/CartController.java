@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +25,7 @@ public class CartController {
     this.cartService = cartService;
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @GetMapping("/client/{clientId}/active")
   @Operation(
       summary = "Obter ou criar carrinho ativo",
@@ -38,6 +40,7 @@ public class CartController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/{id}")
   @Operation(summary = "Buscar carrinho por ID")
   @ApiResponses(
@@ -50,6 +53,7 @@ public class CartController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PostMapping("/client/{clientId}/items")
   @Operation(summary = "Adicionar item ao carrinho")
   @ApiResponses(
@@ -64,6 +68,7 @@ public class CartController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @PutMapping("/client/{clientId}/items/{cartItemId}")
   @Operation(summary = "Atualizar quantidade de item")
   @ApiResponses(
@@ -80,6 +85,7 @@ public class CartController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @DeleteMapping("/client/{clientId}/items/{cartItemId}")
   @Operation(summary = "Remover item do carrinho")
   @ApiResponses(
@@ -93,6 +99,7 @@ public class CartController {
     return ResponseEntity.ok(dto);
   }
 
+  @PreAuthorize("#clientId == authentication.details['id'] or hasRole('ADMIN')")
   @DeleteMapping("/client/{clientId}/clear")
   @Operation(summary = "Esvaziar carrinho")
   @ApiResponses(
