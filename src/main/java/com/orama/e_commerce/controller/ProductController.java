@@ -2,6 +2,8 @@ package com.orama.e_commerce.controller;
 
 import com.orama.e_commerce.dtos.product.*;
 import com.orama.e_commerce.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
+@Tag(name = "Produtos")
 public class ProductController {
 
   private final ProductService productService;
@@ -21,12 +24,14 @@ public class ProductController {
   }
 
   @GetMapping("/{id}")
+  @Operation(summary = "Busca produto pelo id")
   public ResponseEntity<ProductResponseDto> findById(@PathVariable Long id) {
     ProductResponseDto productResponseDto = productService.getById(id);
     return new ResponseEntity<>(productResponseDto, HttpStatus.OK);
   }
 
   @GetMapping
+  @Operation(summary = "Lista produtos ativos paginados")
   public ResponseEntity<Page<ProductResponseDto>> findAllActiveProducts(Pageable pageable) {
     Page<ProductResponseDto> page = productService.getAllActiveProducts(pageable);
     return new ResponseEntity<>(page, HttpStatus.OK);
@@ -34,12 +39,14 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/all")
+  @Operation(summary = "Lista todos os produtos (inclui inativos)")
   public ResponseEntity<Page<ProductResponseDto>> findAll(Pageable pageable) {
     Page<ProductResponseDto> page = productService.getAll(pageable);
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 
   @GetMapping("/name")
+  @Operation(summary = "Busca produtos pelo nome")
   public ResponseEntity<Page<ProductResponseDto>> findAllByName(
       @RequestParam String name, Pageable pageable) {
     Page<ProductResponseDto> page = productService.getAllByName(name, pageable);
@@ -48,6 +55,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
+  @Operation(summary = "Cria um novo produto")
   public ResponseEntity<ProductResponseDto> createProduct(
       @Valid @RequestBody ProductRequestDto productRequestDto) {
     ProductResponseDto productResponseDto = productService.createProduct(productRequestDto);
@@ -56,6 +64,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PutMapping("/{id}")
+  @Operation(summary = "Atualiza dados do produto")
   public ResponseEntity<ProductResponseDto> updateProduct(
       @PathVariable Long id, @Valid @RequestBody ProductUpdateRequestDto productUpdateRequestDto) {
     ProductResponseDto productResponseDto =
@@ -65,6 +74,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/stock/adjust")
+  @Operation(summary = "Ajusta estoque incrementalmente")
   public ResponseEntity<ProductResponseDto> adjustStock(
       @PathVariable Long id, @RequestBody @Valid ProductStockAdjustmentDto stockAdjustmentDto) {
     ProductResponseDto response = productService.stockAdjustment(id, stockAdjustmentDto);
@@ -73,6 +83,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/stock/set")
+  @Operation(summary = "Define estoque para um valor exato")
   public ResponseEntity<ProductResponseDto> setStock(
       @PathVariable Long id, @RequestBody @Valid ProductStockSetDto stockSetDto) {
     ProductResponseDto response = productService.stockSet(id, stockSetDto);
@@ -81,6 +92,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/deactivate")
+  @Operation(summary = "Desativa produto")
   public ResponseEntity<Void> deactivateProduct(@PathVariable Long id) {
     productService.deactivateProduct(id);
     return ResponseEntity.noContent().build();
@@ -88,6 +100,7 @@ public class ProductController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/activate")
+  @Operation(summary = "Reativa produto")
   public ResponseEntity<Void> activateProduct(@PathVariable Long id) {
     productService.activateProduct(id);
     return ResponseEntity.noContent().build();
