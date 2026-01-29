@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16-alpine:///ecommerce_test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    clean-disabled: false
+
+server:
+  port: 0
+
+jwt:
+  secret: test-secret-key-for-jwt-signing-minimum-256-bits-long-enough
+  expiration: 86400000
+
+admin:
+  email: admin@test.com
+  password: Test@1234
+  name: Test Admin
+  cpf: "00000000000"
+  phone: "(00) 00000-0000"
+
+stripe:
+  secret-key: sk_test_fake_key_for_tests
