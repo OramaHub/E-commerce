@@ -35,3 +35,13 @@ admin:
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY}
+
+rate-limit:
+  default-requests-per-minute: 60
+  endpoints:
+    "POST:/api/auth/login":
+      requests-per-minute: 10
+    "POST:/api/auth/register":
+      requests-per-minute: 5
+    "POST:/api/orders":
+      requests-per-minute: 30

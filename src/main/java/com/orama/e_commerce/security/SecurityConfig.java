@@ -1,5 +1,6 @@
 package com.orama.e_commerce.security;
 
+import com.orama.e_commerce.config.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,11 +22,15 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final UserDetailsService userDetailsService;
+  private final RateLimitFilter rateLimitFilter;
 
   public SecurityConfig(
-      JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      UserDetailsService userDetailsService,
+      RateLimitFilter rateLimitFilter) {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.userDetailsService = userDetailsService;
+    this.rateLimitFilter = rateLimitFilter;
   }
 
   @Bean
@@ -36,6 +41,7 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .userDetailsService(userDetailsService)
+        .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
