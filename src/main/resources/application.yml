@@ -24,7 +24,8 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
+  access-expiration: ${ACCESS_EXPIRATION:3600000}
+  refresh-expiration: ${REFRESH_EXPIRATION:2592000000}
 
 admin:
   email: ${ADMIN_EMAIL}

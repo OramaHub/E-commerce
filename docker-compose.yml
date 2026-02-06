@@ -26,12 +26,13 @@ services:
       dockerfile: Dockerfile
     container_name: ecommerce-app
     environment:
-      STRIPE_SECRET_KEY: sk_test_51SOJtf05HSzULbfqQ3aLimoKzAeoNQYtPlN4dZyNftYmqfVZbTQ43Vlt6xRsXfau6l9HQLvN8vjICkyp2yRogOQZ00SeGzutLk
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       POSTGRES_HOST: jdbc:postgresql://postgres:5432/ecommerce_db
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: postgres
       JWT_SECRET: aHd3+Bb2oLpGVW889uDOSGOgWb2H+YtcDWRtfsiuMbE=
-      JWT_EXPIRATION: 86400000
+      ACCESS_EXPIRATION: ${ACCESS_EXPIRATION}
+      REFRESH_EXPIRATION: ${REFRESH_EXPIRATION}
       ADMIN_EMAIL: admin@email.com
       ADMIN_PASSWORD: 123456
       ADMIN_NAME: First Admin
@@ -40,7 +41,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       CORS_ALLOWED_ORIGINS: http://localhost:4200
     ports:
-      - "8080:8080"
+      - "8080:8081"
     depends_on:
       postgres:
         condition: service_healthy
