@@ -1,6 +1,7 @@
 package com.orama.e_commerce.exceptions.handler;
 
 import com.orama.e_commerce.exceptions.BadRequestException;
+import com.orama.e_commerce.exceptions.auth.InvalidRefreshTokenException;
 import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyInactiveException;
@@ -40,6 +41,16 @@ public class GlobalExceptionHandler {
                 request,
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred. Please try again later."));
+  }
+
+  @ExceptionHandler(InvalidRefreshTokenException.class)
+  public ResponseEntity<ErrorMessage> handleInvalidRefreshToken(
+      InvalidRefreshTokenException ex, HttpServletRequest request) {
+    logger.warn("Invalid refresh token: {}", ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.UNAUTHORIZED, ex.getMessage()));
   }
 
   @ExceptionHandler(BadCredentialsException.class)

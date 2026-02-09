@@ -80,3 +80,5 @@ release.properties
 ### Application ###
 /data/
 /uploads/
+
+docs/

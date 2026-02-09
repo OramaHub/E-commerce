@@ -3,6 +3,7 @@ package com.orama.e_commerce.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+  private static final int MIN_SECRET_LENGTH = 32;
+
   @Value("${jwt.secret}")
   private String secret;
 
@@ -23,6 +26,17 @@ public class JwtService {
 
   @Value("${jwt.refresh-expiration}")
   private Long refreshExpiration;
+
+  @PostConstruct
+  public void validateSecret() {
+    if (secret == null || secret.isBlank()) {
+      throw new IllegalStateException("JWT_SECRET não está configurado.");
+    }
+    if (secret.getBytes().length < MIN_SECRET_LENGTH) {
+      throw new IllegalStateException(
+          "JWT_SECRET deve ter no mínimo " + MIN_SECRET_LENGTH + " bytes (256 bits).");
+    }
+  }
 
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);

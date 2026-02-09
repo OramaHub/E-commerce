@@ -32,7 +32,7 @@ docker-compose.yml
 # Documentation
 *.md
 README.md
-CLAUDE.md
+docs/CLAUDE.md
 
 # Pre-commit
 .pre-commit-config.yaml
