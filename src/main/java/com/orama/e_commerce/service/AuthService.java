@@ -49,7 +49,7 @@ public class AuthService {
 
     String token = jwtService.generateToken(userDetails, client.getId());
 
-    return new AuthResponseDto(token, jwtService.getExpirationTime());
+    return new AuthResponseDto(token, jwtService.getAccessExpirationTime());
   }
 
   public AuthRegisterResponseDto register(ClientRequestDto dto) {

@@ -66,7 +66,7 @@ class AuthServiceTest {
     when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
     when(userDetailsService.loadUserByUsername("joao@email.com")).thenReturn(userDetails);
     when(jwtService.generateToken(userDetails, 1L)).thenReturn("jwt-token");
-    when(jwtService.getExpirationTime()).thenReturn(3600000L);
+    when(jwtService.getAccessExpirationTime()).thenReturn(3600000L);
 
     AuthResponseDto result = authService.login(loginRequest);
 
