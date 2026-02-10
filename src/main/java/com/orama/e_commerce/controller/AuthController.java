@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -53,9 +54,12 @@ public class AuthController {
 
   @PostMapping("/logout")
   @PreAuthorize("isAuthenticated()")
-  @Operation(summary = "Invalida o refresh token (logout)")
-  public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequestDto request) {
-    authService.logout(request);
+  @Operation(summary = "Invalida o access token e o refresh token (logout)")
+  public ResponseEntity<Void> logout(
+      @RequestHeader("Authorization") String authHeader,
+      @Valid @RequestBody RefreshTokenRequestDto request) {
+    String accessToken = authHeader.substring(7);
+    authService.logout(accessToken, request);
     return ResponseEntity.noContent().build();
   }
 }

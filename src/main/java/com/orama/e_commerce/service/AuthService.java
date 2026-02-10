@@ -25,6 +25,7 @@ public class AuthService {
   private final ClientService clientService;
   private final ClientRepository clientRepository;
   private final RefreshTokenService refreshTokenService;
+  private final TokenRevocationService tokenRevocationService;
 
   public AuthService(
       AuthenticationManager authenticationManager,
@@ -32,13 +33,15 @@ public class AuthService {
       JwtService jwtService,
       ClientService clientService,
       ClientRepository clientRepository,
-      RefreshTokenService refreshTokenService) {
+      RefreshTokenService refreshTokenService,
+      TokenRevocationService tokenRevocationService) {
     this.authenticationManager = authenticationManager;
     this.userDetailsService = userDetailsService;
     this.jwtService = jwtService;
     this.clientService = clientService;
     this.clientRepository = clientRepository;
     this.refreshTokenService = refreshTokenService;
+    this.tokenRevocationService = tokenRevocationService;
   }
 
   public AuthResponseDto login(LoginRequestDto loginRequest) {
@@ -71,7 +74,8 @@ public class AuthService {
         accessToken, newToken.getToken(), jwtService.getAccessExpirationTime());
   }
 
-  public void logout(RefreshTokenRequestDto request) {
+  public void logout(String accessToken, RefreshTokenRequestDto request) {
+    tokenRevocationService.revokeToken(accessToken);
     refreshTokenService.deleteByToken(request.refreshToken());
   }
 
