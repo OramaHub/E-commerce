@@ -40,6 +40,7 @@ class AuthServiceTest {
   @Mock private ClientService clientService;
   @Mock private ClientRepository clientRepository;
   @Mock private RefreshTokenService refreshTokenService;
+  @Mock private TokenRevocationService tokenRevocationService;
 
   @InjectMocks private AuthService authService;
 
@@ -169,10 +170,12 @@ class AuthServiceTest {
 
   @Test
   void shouldLogoutSuccessfully() {
+    String accessToken = "valid-access-token";
     RefreshTokenRequestDto request = new RefreshTokenRequestDto("refresh-token-uuid");
 
-    authService.logout(request);
+    authService.logout(accessToken, request);
 
+    verify(tokenRevocationService).revokeToken(accessToken);
     verify(refreshTokenService).deleteByToken("refresh-token-uuid");
   }
 }

@@ -1,5 +1,6 @@
 package com.orama.e_commerce.security;
 
+import com.orama.e_commerce.service.TokenRevocationService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
@@ -22,10 +23,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
+  private final TokenRevocationService tokenRevocationService;
 
-  public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+  public JwtAuthenticationFilter(
+      JwtService jwtService,
+      UserDetailsService userDetailsService,
+      TokenRevocationService tokenRevocationService) {
     this.jwtService = jwtService;
     this.userDetailsService = userDetailsService;
+    this.tokenRevocationService = tokenRevocationService;
   }
 
   @Override
@@ -48,7 +54,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-        if (jwtService.validateToken(jwt, userDetails)) {
+        if (jwtService.validateToken(jwt, userDetails)
+            && !tokenRevocationService.isTokenRevoked(jwt)) {
           UsernamePasswordAuthenticationToken authToken =
               new UsernamePasswordAuthenticationToken(
                   userDetails, null, userDetails.getAuthorities());
