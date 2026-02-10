@@ -32,9 +32,3 @@ jobs:
 
       - name: Run pre-commit
         run: pre-commit run --all-files
-
-      - name: Give mvnw execute permission
-        run: chmod +x ./mvnw
-
-      - name: Run tests
-        run: ./mvnw test

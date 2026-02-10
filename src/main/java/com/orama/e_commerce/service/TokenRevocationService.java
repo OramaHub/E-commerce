@@ -8,9 +8,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@EnableScheduling
 @Service
 public class TokenRevocationService {
 
@@ -43,6 +46,7 @@ public class TokenRevocationService {
   }
 
   @Transactional
+  @Scheduled(cron = "0 0 3 * * *")
   public void purgeExpiredTokens() {
     revokedTokenRepository.deleteAllByExpiresAtBefore(Instant.now());
   }
