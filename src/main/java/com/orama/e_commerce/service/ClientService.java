@@ -76,6 +76,11 @@ public class ClientService {
   public ClientResponseDto createClient(ClientRequestDto clientRequestDto) {
     findByEmail(clientRequestDto.email());
 
+    if (clientRepository.existsByCpf(clientRequestDto.cpf())) {
+      throw new ClientAlreadyExistsException(
+          "Client with CPF '" + clientRequestDto.cpf() + "' already exists");
+    }
+
     Client client = clientMapper.toEntity(clientRequestDto);
 
     client.setActive(true);

@@ -17,4 +17,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
   Page<Client> findByActiveTrue(Pageable pageable);
 
   boolean existsByEmailAndIdNot(String email, Long id);
+
+  boolean existsByCpf(String cpf);
 }
