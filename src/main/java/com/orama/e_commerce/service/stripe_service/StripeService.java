@@ -5,14 +5,20 @@ import com.orama.e_commerce.dtos.stripe_entities.StripeResponse;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class StripeService {
 
+  @Value("${stripe.success-url}")
+  private String successUrl;
+
+  @Value("${stripe.cancel-url}")
+  private String cancelUrl;
+
   public StripeResponse checkoutProducts(ProductRequest productRequest) {
 
-    // Converter valor de reais para centavos
     Long amountInCents =
         productRequest.amount().multiply(new java.math.BigDecimal("100")).longValue();
 
@@ -23,7 +29,7 @@ public class StripeService {
 
     SessionCreateParams.LineItem.PriceData priceData =
         SessionCreateParams.LineItem.PriceData.builder()
-            .setCurrency(productRequest.currency() != null ? productRequest.currency() : "USD")
+            .setCurrency(productRequest.currency() != null ? productRequest.currency() : "BRL")
             .setUnitAmount(amountInCents)
             .setProductData(productData)
             .build();
@@ -37,8 +43,8 @@ public class StripeService {
     SessionCreateParams params =
         SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
-            .setSuccessUrl("https://example.com/success?session_id={CHECKOUT_SESSION_ID}")
-            .setCancelUrl("https://example.com/cancel")
+            .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+            .setCancelUrl(cancelUrl)
             .addLineItem(lineItem)
             .build();
 
