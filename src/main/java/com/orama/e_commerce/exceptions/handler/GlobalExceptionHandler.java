@@ -1,6 +1,7 @@
 package com.orama.e_commerce.exceptions.handler;
 
 import com.orama.e_commerce.exceptions.BadRequestException;
+import com.orama.e_commerce.exceptions.auth.InvalidPasswordResetTokenException;
 import com.orama.e_commerce.exceptions.auth.InvalidRefreshTokenException;
 import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
@@ -41,6 +42,16 @@ public class GlobalExceptionHandler {
                 request,
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred. Please try again later."));
+  }
+
+  @ExceptionHandler(InvalidPasswordResetTokenException.class)
+  public ResponseEntity<ErrorMessage> handleInvalidPasswordResetToken(
+      InvalidPasswordResetTokenException ex, HttpServletRequest request) {
+    logger.warn("Invalid password reset token: {}", ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.BAD_REQUEST, ex.getMessage()));
   }
 
   @ExceptionHandler(InvalidRefreshTokenException.class)

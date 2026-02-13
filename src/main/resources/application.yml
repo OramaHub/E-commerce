@@ -18,6 +18,20 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
 server:
   port: 8081
@@ -48,3 +62,5 @@ rate-limit:
       requests-per-minute: 5
     "POST:/api/orders":
       requests-per-minute: 30
+    "POST:/api/auth/forgot-password":
+      requests-per-minute: 3
