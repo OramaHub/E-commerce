@@ -62,7 +62,7 @@ public class PasswordResetService {
 
     passwordResetTokenRepository.save(resetToken);
 
-    String resetLink = frontendUrl + "/reset-password?token=" + resetToken.getToken();
+    String resetLink = frontendUrl + "/recuperar-senha?token=" + resetToken.getToken();
     emailService.sendPasswordResetEmail(client.getEmail(), client.getName(), resetLink);
 
     logger.info("Password reset token generated for client: {}", client.getId());

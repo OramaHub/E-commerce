@@ -43,7 +43,12 @@ public class SecurityConfig {
                 auth.requestMatchers(
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/health")
                     .permitAll()
-                    .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh")
+                    .requestMatchers(
+                        "/api/auth/login",
+                        "/api/auth/register",
+                        "/api/auth/refresh",
+                        "/api/auth/forgot-password",
+                        "/api/auth/reset-password")
                     .permitAll()
                     .requestMatchers(
                         org.springframework.http.HttpMethod.GET,
