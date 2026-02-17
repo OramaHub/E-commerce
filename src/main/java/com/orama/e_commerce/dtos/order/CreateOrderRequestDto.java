@@ -6,6 +6,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
 public record CreateOrderRequestDto(
-    @NotNull(message = "Cart ID cannot be null") @Positive(message = "Cart ID must be positive")
+    @NotNull(message = "ID do carrinho é obrigatório")
+        @Positive(message = "ID do carrinho deve ser positivo")
         Long cartId,
-    @PositiveOrZero(message = "Discount must be zero or positive") BigDecimal discount) {}
+    @PositiveOrZero(message = "Desconto deve ser zero ou positivo") BigDecimal discount) {}

@@ -42,7 +42,9 @@ public class LocationService {
   @Transactional(readOnly = true)
   public CountryResponseDto getCountryById(Long id) {
     Country country =
-        countryRepository.findById(id).orElseThrow(() -> new RuntimeException("Country not found"));
+        countryRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("País não encontrado"));
     return locationMapper.toCountryDto(country);
   }
 
@@ -61,7 +63,9 @@ public class LocationService {
   @Transactional(readOnly = true)
   public StateResponseDto getStateById(Long id) {
     State state =
-        stateRepository.findById(id).orElseThrow(() -> new RuntimeException("State not found"));
+        stateRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Estado não encontrado"));
     return locationMapper.toStateDto(state);
   }
 
@@ -89,7 +93,7 @@ public class LocationService {
     City city =
         cityRepository
             .findByIdWithStateAndCountry(id)
-            .orElseThrow(() -> new RuntimeException("City not found"));
+            .orElseThrow(() -> new RuntimeException("Cidade não encontrada"));
     return locationMapper.toCityDto(city);
   }
 }

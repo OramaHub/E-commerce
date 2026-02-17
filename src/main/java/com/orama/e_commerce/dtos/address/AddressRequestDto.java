@@ -5,16 +5,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record AddressRequestDto(
-    @NotBlank(message = "Street cannot be empty")
-        @Size(max = 255, message = "Street must be at most 255 characters long")
+    @NotBlank(message = "Rua é obrigatória")
+        @Size(max = 255, message = "Rua deve ter no máximo 255 caracteres")
         String street,
-    @Size(max = 20, message = "Number must be at most 20 characters long") String number,
-    @Size(max = 100, message = "Complement must be at most 100 characters long") String complement,
-    @NotBlank(message = "District cannot be empty")
-        @Size(max = 100, message = "District must be at most 100 characters long")
+    @Size(max = 20, message = "Número deve ter no máximo 20 caracteres") String number,
+    @Size(max = 100, message = "Complemento deve ter no máximo 100 caracteres") String complement,
+    @NotBlank(message = "Bairro é obrigatório")
+        @Size(max = 100, message = "Bairro deve ter no máximo 100 caracteres")
         String district,
-    @NotBlank(message = "Zip code cannot be empty")
-        @Size(max = 20, message = "Zip code must be at most 20 characters long")
+    @NotBlank(message = "CEP é obrigatório")
+        @Size(max = 20, message = "CEP deve ter no máximo 20 caracteres")
         String zipCode,
-    @NotNull(message = "City ID cannot be null") Long cityId,
+    @NotNull(message = "ID da cidade é obrigatório") Long cityId,
     Boolean defaultAddress) {}

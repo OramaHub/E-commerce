@@ -29,7 +29,7 @@ public class ProductService {
     Product product = findById(id);
 
     if (!product.getActive()) {
-      throw new ProductNotFoundException("Product not found or inactive.");
+      throw new ProductNotFoundException("Produto não encontrado ou inativo.");
     }
 
     return productMapper.toResponseDto(product);
@@ -83,7 +83,7 @@ public class ProductService {
 
     int newStock = product.getStock() + stockAdjustmentDto.quantity();
     if (newStock < 0) {
-      throw new StockNegativeException("Stock adjustment results in negative stock.");
+      throw new StockNegativeException("Ajuste de estoque resulta em estoque negativo.");
     }
 
     product.setStock(newStock);
@@ -112,7 +112,7 @@ public class ProductService {
     Product product = findById(id);
 
     if (!product.getActive()) {
-      throw new ProductAlreadyInactiveException("Product is already inactive.");
+      throw new ProductAlreadyInactiveException("Produto já está inativo.");
     }
 
     product.setActive(false);
@@ -124,7 +124,7 @@ public class ProductService {
     Product product = findById(id);
 
     if (product.getActive()) {
-      throw new ProductAlreadyActiveException("Product is already active.");
+      throw new ProductAlreadyActiveException("Produto já está ativo.");
     }
 
     product.setActive(true);
@@ -134,6 +134,6 @@ public class ProductService {
   protected Product findById(Long id) {
     return productRepository
         .findById(id)
-        .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        .orElseThrow(() -> new ProductNotFoundException("Produto não encontrado com id: " + id));
   }
 }

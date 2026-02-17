@@ -51,7 +51,7 @@ public class AuthService {
     Client client =
         clientRepository
             .findByEmail(loginRequest.email())
-            .orElseThrow(() -> new RuntimeException("Client not found"));
+            .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
 
     UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.email());
 

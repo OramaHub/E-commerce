@@ -27,10 +27,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         clientRepository
             .findByEmail(email)
             .orElseThrow(
-                () -> new UsernameNotFoundException("User not found with email: " + email));
+                () -> new UsernameNotFoundException("Usuário não encontrado com email: " + email));
 
     if (!client.getActive()) {
-      throw new UsernameNotFoundException("User account is inactive");
+      throw new UsernameNotFoundException("Conta do usuário está inativa");
     }
 
     List<GrantedAuthority> authorities = new ArrayList<>();

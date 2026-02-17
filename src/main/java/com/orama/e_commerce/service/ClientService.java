@@ -47,7 +47,7 @@ public class ClientService {
         clientRepository
             .findByEmail(email)
             .orElseThrow(
-                () -> new ClientNotFoundException("Client not found with email: " + email));
+                () -> new ClientNotFoundException("Cliente não encontrado com email: " + email));
     return clientMapper.toResponseDto(client);
   }
 
@@ -55,7 +55,8 @@ public class ClientService {
     Client client =
         clientRepository
             .findByCpf(cpf)
-            .orElseThrow(() -> new ClientNotFoundException("Client not found with CPF: " + cpf));
+            .orElseThrow(
+                () -> new ClientNotFoundException("Cliente não encontrado com CPF: " + cpf));
     return clientMapper.toResponseDto(client);
   }
 
@@ -64,7 +65,7 @@ public class ClientService {
     try {
       roleEnum = UserRole.valueOf(role.toUpperCase());
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Invalid role: " + role);
+      throw new IllegalArgumentException("Papel inválido: " + role);
     }
 
     Page<Client> clients = clientRepository.findByRole(roleEnum, pageable);
@@ -78,7 +79,7 @@ public class ClientService {
 
     if (clientRepository.existsByCpf(clientRequestDto.cpf())) {
       throw new ClientAlreadyExistsException(
-          "Client with CPF '" + clientRequestDto.cpf() + "' already exists");
+          "Cliente com CPF '" + clientRequestDto.cpf() + "' já existe");
     }
 
     Client client = clientMapper.toEntity(clientRequestDto);
@@ -97,7 +98,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (clientRepository.existsByEmailAndIdNot(updateRequestDto.email(), id)) {
-      throw new EmailAlreadyExistsException("Email already in use by another client.");
+      throw new EmailAlreadyExistsException("Email já está em uso por outro cliente.");
     }
 
     clientMapper.updateDto(updateRequestDto, client);
@@ -112,7 +113,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (!passwordEncoder.matches(dto.currentPassword(), client.getPasswordHash())) {
-      throw new InvalidPasswordException("Current password is incorrect.");
+      throw new InvalidPasswordException("Senha atual incorreta.");
     }
 
     client.setPasswordHash(passwordEncoder.encode(dto.newPassword()));
@@ -124,7 +125,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (!client.getActive()) {
-      throw new ClientAlreadyInactiveException("Client is already inactive.");
+      throw new ClientAlreadyInactiveException("Cliente já está inativo.");
     }
 
     client.setActive(false);
@@ -136,7 +137,7 @@ public class ClientService {
     Client client = findById(id);
 
     if (client.getActive()) {
-      throw new ClientAlreadyActiveException("Client is already active.");
+      throw new ClientAlreadyActiveException("Cliente já está ativo.");
     }
 
     client.setActive(true);
@@ -145,13 +146,13 @@ public class ClientService {
 
   private void findByEmail(String email) {
     if (clientRepository.findByEmail(email).isPresent()) {
-      throw new ClientAlreadyExistsException("Client with email '" + email + "' already exists");
+      throw new ClientAlreadyExistsException("Cliente com email '" + email + "' já existe");
     }
   }
 
   public Client findById(Long id) {
     return clientRepository
         .findById(id)
-        .orElseThrow(() -> new ClientNotFoundException("Client not found with id " + id));
+        .orElseThrow(() -> new ClientNotFoundException("Cliente não encontrado com id " + id));
   }
 }

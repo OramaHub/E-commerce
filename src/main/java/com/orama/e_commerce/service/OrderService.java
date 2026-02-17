@@ -40,10 +40,11 @@ public class OrderService {
         cartRepository
             .findById(dto.cartId())
             .orElseThrow(
-                () -> new CartNotFoundException("Cart not found with id: " + dto.cartId()));
+                () -> new CartNotFoundException("Carrinho não encontrado com id: " + dto.cartId()));
 
     if (cart.getItems() == null || cart.getItems().isEmpty()) {
-      throw new IllegalArgumentException("Cannot create order from empty cart");
+      throw new IllegalArgumentException(
+          "Não é possível criar pedido a partir de um carrinho vazio");
     }
 
     Order order = orderMapper.toEntity(dto);
@@ -58,7 +59,7 @@ public class OrderService {
 
     BigDecimal discount = dto.discount() != null ? dto.discount() : BigDecimal.ZERO;
     if (discount.compareTo(subtotal) > 0) {
-      throw new InvalidDiscountException("Discount cannot exceed subtotal");
+      throw new InvalidDiscountException("Desconto não pode exceder o subtotal");
     }
     order.setDiscount(discount);
     order.setTotal(subtotal.subtract(discount));
@@ -75,7 +76,7 @@ public class OrderService {
     Order order =
         orderRepository
             .findById(id)
-            .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+            .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
 
     return orderMapper.toResponseDto(order);
   }
@@ -95,7 +96,8 @@ public class OrderService {
         orderRepository
             .findByOrderNumber(orderNumber)
             .orElseThrow(
-                () -> new OrderNotFoundException("Order not found with number: " + orderNumber));
+                () ->
+                    new OrderNotFoundException("Pedido não encontrado com número: " + orderNumber));
 
     return orderMapper.toResponseDto(order);
   }
@@ -105,7 +107,7 @@ public class OrderService {
     Order order =
         orderRepository
             .findById(id)
-            .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+            .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
 
     order.setStatus(newStatus);
     Order updatedOrder = orderRepository.save(order);
@@ -118,7 +120,7 @@ public class OrderService {
     Order order =
         orderRepository
             .findById(id)
-            .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+            .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
 
     order.setStatus(OrderStatus.CANCELLED);
     Order cancelledOrder = orderRepository.save(order);

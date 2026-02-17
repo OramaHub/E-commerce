@@ -5,15 +5,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ClientUpdateRequestDto(
-    @NotBlank(message = "Name cannot be empty")
-        @Size(max = 150, message = "Name must be at most 150 characters long")
+    @NotBlank(message = "Nome é obrigatório")
+        @Size(max = 150, message = "Nome deve ter no máximo 150 caracteres")
         String name,
-    @NotBlank(message = "Email cannot be empty")
+    @NotBlank(message = "Email é obrigatório")
         @Email(
-            message = "Email format is invalid",
+            message = "Formato de email inválido",
             regexp = "^[a-z0-9.+-_]+@[a-z0-9.-]+\\.[a-z]{2,}$")
-        @Size(max = 100, message = "Email must be at most 100 characters long")
+        @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
         String email,
-    @NotBlank(message = "Phone cannot be empty")
-        @Size(max = 30, message = "Phone must be at most 30 characters long")
+    @NotBlank(message = "Telefone é obrigatório")
+        @Size(max = 30, message = "Telefone deve ter no máximo 30 caracteres")
         String phone) {}

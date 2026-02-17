@@ -34,11 +34,11 @@ public class RefreshTokenService {
     RefreshToken refreshToken =
         refreshTokenRepository
             .findByToken(token)
-            .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not found."));
+            .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token não encontrado."));
 
     if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
       refreshTokenRepository.delete(refreshToken);
-      throw new InvalidRefreshTokenException("Refresh token expired.");
+      throw new InvalidRefreshTokenException("Refresh token expirado.");
     }
 
     return refreshToken;

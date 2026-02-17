@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
             new ErrorMessage(
                 request,
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred. Please try again later."));
+                "Ocorreu um erro inesperado. Tente novamente mais tarde."));
   }
 
   @ExceptionHandler(InvalidRefreshTokenException.class)
@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .contentType(MediaType.APPLICATION_JSON)
-        .body(new ErrorMessage(request, HttpStatus.UNAUTHORIZED, "Invalid email or password."));
+        .body(new ErrorMessage(request, HttpStatus.UNAUTHORIZED, "Email ou senha inválidos."));
   }
 
   @ExceptionHandler(UsernameNotFoundException.class)
@@ -70,7 +70,7 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .contentType(MediaType.APPLICATION_JSON)
-        .body(new ErrorMessage(request, HttpStatus.UNAUTHORIZED, "Invalid email or password."));
+        .body(new ErrorMessage(request, HttpStatus.UNAUTHORIZED, "Email ou senha inválidos."));
   }
 
   @ExceptionHandler(InvalidPasswordException.class)
@@ -196,7 +196,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorMessage> handleMissingPathVariable(
       MissingPathVariableException ex, HttpServletRequest request) {
     logger.error("Missing path variable", ex);
-    String message = String.format("Missing path variable: %s", ex.getVariableName());
+    String message = String.format("Variável de caminho ausente: %s", ex.getVariableName());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(new ErrorMessage(request, HttpStatus.BAD_REQUEST, message));
   }
@@ -205,7 +205,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorMessage> handleMissingRequestParam(
       MissingServletRequestParameterException ex, HttpServletRequest request) {
     logger.error("Missing request parameter", ex);
-    String message = String.format("Missing request parameter: %s", ex.getParameterName());
+    String message = String.format("Parâmetro de requisição ausente: %s", ex.getParameterName());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(new ErrorMessage(request, HttpStatus.BAD_REQUEST, message));
   }
@@ -215,7 +215,8 @@ public class GlobalExceptionHandler {
       NoHandlerFoundException ex, HttpServletRequest request) {
     logger.error("No handler found for request", ex);
     String message =
-        String.format("No handler found for %s %s", ex.getHttpMethod(), ex.getRequestURL());
+        String.format(
+            "Nenhum handler encontrado para %s %s", ex.getHttpMethod(), ex.getRequestURL());
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, message));
   }
@@ -228,7 +229,7 @@ public class GlobalExceptionHandler {
         .contentType(MediaType.APPLICATION_JSON)
         .body(
             new ErrorMessage(
-                request, HttpStatus.BAD_REQUEST, "Invalid argument: " + ex.getMessage()));
+                request, HttpStatus.BAD_REQUEST, "Argumento inválido: " + ex.getMessage()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -242,7 +243,7 @@ public class GlobalExceptionHandler {
             new ErrorMessage(
                 request,
                 HttpStatus.UNPROCESSABLE_ENTITY,
-                "Invalid field(s)",
+                "Campo(s) inválido(s)",
                 ex.getBindingResult()));
   }
 
@@ -256,6 +257,6 @@ public class GlobalExceptionHandler {
             new ErrorMessage(
                 request,
                 HttpStatus.FORBIDDEN,
-                "Access denied: " + "You do not have permission to access this resource"));
+                "Acesso negado: você não tem permissão para acessar este recurso"));
   }
 }
