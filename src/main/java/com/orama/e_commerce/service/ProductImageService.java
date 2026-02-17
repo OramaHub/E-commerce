@@ -79,7 +79,7 @@ public class ProductImageService {
     ProductImage image = findById(imageId);
 
     if (!image.getProduct().getId().equals(productId)) {
-      throw new BadRequestException("Image ID does not belong to the specified Product ID.");
+      throw new BadRequestException("ID da imagem não pertence ao ID do produto especificado.");
     }
 
     // deletar o arquivo fisico do armazenamento externo: storageService.delete(image.getUrl());
@@ -90,6 +90,7 @@ public class ProductImageService {
   private ProductImage findById(Long id) {
     return productImageRepository
         .findById(id)
-        .orElseThrow(() -> new ProductImageNotFoundException("Image not found with id: " + id));
+        .orElseThrow(
+            () -> new ProductImageNotFoundException("Imagem não encontrada com id: " + id));
   }
 }

@@ -54,7 +54,8 @@ public class CartService {
     Cart cart =
         cartRepository
             .findById(cartId)
-            .orElseThrow(() -> new CartNotFoundException("Cart not found with id: " + cartId));
+            .orElseThrow(
+                () -> new CartNotFoundException("Carrinho não encontrado com id: " + cartId));
 
     return cartMapper.toResponseDto(cart);
   }
@@ -71,14 +72,15 @@ public class CartService {
             .findById(dto.productId())
             .orElseThrow(
                 () ->
-                    new ProductNotFoundException("Product not found with id: " + dto.productId()));
+                    new ProductNotFoundException(
+                        "Produto não encontrado com id: " + dto.productId()));
 
     if (!product.getActive()) {
-      throw new IllegalArgumentException("Product is not active");
+      throw new IllegalArgumentException("Produto não está ativo");
     }
 
     if (product.getStock() < dto.quantity()) {
-      throw new IllegalArgumentException("Insufficient stock. Available: " + product.getStock());
+      throw new IllegalArgumentException("Estoque insuficiente. Disponível: " + product.getStock());
     }
 
     CartItem existingItem =
@@ -87,7 +89,8 @@ public class CartService {
     if (existingItem != null) {
       int newQuantity = existingItem.getQuantity() + dto.quantity();
       if (product.getStock() < newQuantity) {
-        throw new IllegalArgumentException("Insufficient stock. Available: " + product.getStock());
+        throw new IllegalArgumentException(
+            "Estoque insuficiente. Disponível: " + product.getStock());
       }
       existingItem.setQuantity(newQuantity);
       cartItemRepository.save(existingItem);
@@ -116,7 +119,7 @@ public class CartService {
 
     Product product = cartItem.getProduct();
     if (product.getStock() < dto.quantity()) {
-      throw new IllegalArgumentException("Insufficient stock. Available: " + product.getStock());
+      throw new IllegalArgumentException("Estoque insuficiente. Disponível: " + product.getStock());
     }
 
     cartItem.setQuantity(dto.quantity());
@@ -143,7 +146,8 @@ public class CartService {
     Cart cart =
         cartRepository
             .findActiveCartByClientId(clientId)
-            .orElseThrow(() -> new CartNotFoundException("No active cart found for client"));
+            .orElseThrow(
+                () -> new CartNotFoundException("Nenhum carrinho ativo encontrado para o cliente"));
 
     if (cart.getItems() != null) {
       cartItemRepository.deleteAll(cart.getItems());
@@ -157,16 +161,19 @@ public class CartService {
     Cart cart =
         cartRepository
             .findActiveCartByClientId(clientId)
-            .orElseThrow(() -> new CartNotFoundException("No active cart found for client"));
+            .orElseThrow(
+                () -> new CartNotFoundException("Nenhum carrinho ativo encontrado para o cliente"));
 
     CartItem cartItem =
         cartItemRepository
             .findById(cartItemId)
             .orElseThrow(
-                () -> new IllegalArgumentException("Cart item not found with id: " + cartItemId));
+                () ->
+                    new IllegalArgumentException(
+                        "Item do carrinho não encontrado com id: " + cartItemId));
 
     if (!cartItem.getCart().getId().equals(cart.getId())) {
-      throw new IllegalArgumentException("Cart item does not belong to this cart");
+      throw new IllegalArgumentException("Item do carrinho não pertence a este carrinho");
     }
 
     return cartItem;

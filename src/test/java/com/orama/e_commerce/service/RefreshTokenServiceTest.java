@@ -81,7 +81,7 @@ class RefreshTokenServiceTest {
             InvalidRefreshTokenException.class,
             () -> refreshTokenService.validateRefreshToken("invalid-token"));
 
-    assertEquals("Refresh token not found.", exception.getMessage());
+    assertEquals("Refresh token não encontrado.", exception.getMessage());
   }
 
   @Test
@@ -95,7 +95,7 @@ class RefreshTokenServiceTest {
             InvalidRefreshTokenException.class,
             () -> refreshTokenService.validateRefreshToken("refresh-token-uuid"));
 
-    assertEquals("Refresh token expired.", exception.getMessage());
+    assertEquals("Refresh token expirado.", exception.getMessage());
     verify(refreshTokenRepository).delete(refreshToken);
   }
 

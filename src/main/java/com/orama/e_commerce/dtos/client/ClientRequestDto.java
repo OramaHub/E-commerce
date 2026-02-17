@@ -7,22 +7,22 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ClientRequestDto(
-    @NotBlank(message = "Name cannot be empty")
-        @Size(min = 3, max = 150, message = "Name must be between 3 and 150 characters long")
+    @NotBlank(message = "Nome é obrigatório")
+        @Size(min = 3, max = 150, message = "Nome deve ter entre 3 e 150 caracteres")
         String name,
-    @NotBlank(message = "Email cannot be empty")
+    @NotBlank(message = "Email é obrigatório")
         @Email(
-            message = "Email format is invalid",
+            message = "Formato de email inválido",
             regexp = "^[a-z0-9.+-_]+@[a-z0-9.-]+\\.[a-z]{2,}$")
-        @Size(max = 100, message = "Email must be at most 100 characters long")
+        @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
         String email,
-    @NotBlank(message = "Password cannot be empty")
-        @Size(min = 6, message = "Password must be at least 6 characters long")
+    @NotBlank(message = "Senha é obrigatória")
+        @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
         String password,
-    @NotBlank(message = "CPF cannot be empty")
-        @Size(min = 11, max = 11, message = "CPF must be 11 digits")
-        @CPF(message = "Invalid CPF")
+    @NotBlank(message = "CPF é obrigatório")
+        @Size(min = 11, max = 11, message = "CPF deve ter 11 dígitos")
+        @CPF(message = "CPF inválido")
         String cpf,
-    @NotBlank(message = "Phone cannot be empty")
-        @Pattern(regexp = "^\\d{10,11}$", message = "Phone must be 10 or 11 digits")
+    @NotBlank(message = "Telefone é obrigatório")
+        @Pattern(regexp = "^\\d{10,11}$", message = "Telefone deve ter 10 ou 11 dígitos")
         String phone) {}

@@ -57,7 +57,7 @@ public class AddressService {
     Address address = findById(id);
 
     if (!address.getClient().getId().equals(clientId)) {
-      throw new RuntimeException("You don't have permission to update this address");
+      throw new RuntimeException("Você não tem permissão para atualizar este endereço");
     }
 
     if (Boolean.TRUE.equals(requestDto.defaultAddress())) {
@@ -81,7 +81,7 @@ public class AddressService {
     Address address = findById(id);
 
     if (!address.getClient().getId().equals(clientId)) {
-      throw new RuntimeException("You don't have permission to view this address");
+      throw new RuntimeException("Você não tem permissão para visualizar este endereço");
     }
 
     return addressMapper.toResponseDto(address);
@@ -96,7 +96,8 @@ public class AddressService {
     Address address =
         addressRepository
             .findByClientIdAndDefaultAddressTrue(clientId)
-            .orElseThrow(() -> new RuntimeException("No default address found for this client"));
+            .orElseThrow(
+                () -> new RuntimeException("Nenhum endereço padrão encontrado para este cliente"));
 
     return addressMapper.toResponseDto(address);
   }
@@ -106,7 +107,7 @@ public class AddressService {
     Address address = findById(id);
 
     if (!address.getClient().getId().equals(clientId)) {
-      throw new RuntimeException("You don't have permission to delete this address");
+      throw new RuntimeException("Você não tem permissão para excluir este endereço");
     }
 
     addressRepository.delete(address);
@@ -117,7 +118,7 @@ public class AddressService {
     Address address = findById(id);
 
     if (!address.getClient().getId().equals(clientId)) {
-      throw new RuntimeException("You don't have permission to modify this address");
+      throw new RuntimeException("Você não tem permissão para modificar este endereço");
     }
 
     unsetDefaultAddress(clientId);
@@ -129,7 +130,7 @@ public class AddressService {
   private Address findById(Long id) {
     return addressRepository
         .findById(id)
-        .orElseThrow(() -> new RuntimeException("Address not found with id " + id));
+        .orElseThrow(() -> new RuntimeException("Endereço não encontrado com id " + id));
   }
 
   private void unsetDefaultAddress(Long clientId) {

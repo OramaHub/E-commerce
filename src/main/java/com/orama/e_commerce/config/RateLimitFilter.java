@@ -44,7 +44,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
       response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
       response.setContentType("application/json");
       response.setHeader("X-Rate-Limit-Remaining", "0");
-      response.getWriter().write("{\"error\": \"Rate limit exceeded. Try again later.\"}");
+      response
+          .getWriter()
+          .write("{\"error\": \"Limite de requisições excedido. Tente novamente mais tarde.\"}");
     }
   }
 
