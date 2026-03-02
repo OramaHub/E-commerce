@@ -59,9 +59,11 @@ public class JwtService {
     return extractExpiration(token).before(new Date());
   }
 
-  public String generateToken(UserDetails userDetails, Long clientId) {
+  public String generateToken(UserDetails userDetails, Long clientId, String name, String role) {
     Map<String, Object> claims = new HashMap<>();
     claims.put("id", clientId);
+    claims.put("name", name);
+    claims.put("role", role);
     return createToken(claims, userDetails.getUsername());
   }
 
