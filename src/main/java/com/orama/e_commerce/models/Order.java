@@ -36,6 +36,12 @@ public class Order {
   @Column(precision = 15, scale = 2)
   private BigDecimal total;
 
+  @Column(name = "shipping_cost", precision = 15, scale = 2)
+  private BigDecimal shippingCost;
+
+  @Column(name = "zip_code", length = 9)
+  private String zipCode;
+
   @OneToMany(
       mappedBy = "order",
       fetch = FetchType.LAZY,
@@ -139,6 +145,22 @@ public class Order {
 
   public void setDeliveryAddress(Address deliveryAddress) {
     this.deliveryAddress = deliveryAddress;
+  }
+
+  public BigDecimal getShippingCost() {
+    return shippingCost;
+  }
+
+  public void setShippingCost(BigDecimal shippingCost) {
+    this.shippingCost = shippingCost;
+  }
+
+  public String getZipCode() {
+    return zipCode;
+  }
+
+  public void setZipCode(String zipCode) {
+    this.zipCode = zipCode;
   }
 
   public List<OrderItem> getItems() {
