@@ -79,7 +79,7 @@ class AuthServiceTest {
         .thenReturn(null);
     when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
     when(userDetailsService.loadUserByUsername("joao@email.com")).thenReturn(userDetails);
-    when(jwtService.generateToken(userDetails, 1L)).thenReturn("jwt-token");
+    when(jwtService.generateToken(userDetails, 1L, "João Silva", "USER")).thenReturn("jwt-token");
     when(jwtService.getAccessExpirationTime()).thenReturn(3600000L);
     when(refreshTokenService.createRefreshToken(client)).thenReturn(refreshToken);
 
@@ -145,7 +145,8 @@ class AuthServiceTest {
     when(refreshTokenService.validateRefreshToken("refresh-token-uuid")).thenReturn(refreshToken);
     when(refreshTokenService.rotateRefreshToken(refreshToken)).thenReturn(newRefreshToken);
     when(userDetailsService.loadUserByUsername("joao@email.com")).thenReturn(userDetails);
-    when(jwtService.generateToken(userDetails, 1L)).thenReturn("new-jwt-token");
+    when(jwtService.generateToken(userDetails, 1L, "João Silva", "USER"))
+        .thenReturn("new-jwt-token");
     when(jwtService.getAccessExpirationTime()).thenReturn(3600000L);
 
     AuthResponseDto result = authService.refresh(request);
