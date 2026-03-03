@@ -26,12 +26,17 @@ public class OrderService {
   private final OrderRepository orderRepository;
   private final CartRepository cartRepository;
   private final OrderMapper orderMapper;
+  private final ShippingService shippingService;
 
   public OrderService(
-      OrderRepository orderRepository, CartRepository cartRepository, OrderMapper orderMapper) {
+      OrderRepository orderRepository,
+      CartRepository cartRepository,
+      OrderMapper orderMapper,
+      ShippingService shippingService) {
     this.orderRepository = orderRepository;
     this.cartRepository = cartRepository;
     this.orderMapper = orderMapper;
+    this.shippingService = shippingService;
   }
 
   @Transactional
@@ -62,7 +67,12 @@ public class OrderService {
       throw new InvalidDiscountException("Desconto não pode exceder o subtotal");
     }
     order.setDiscount(discount);
-    order.setTotal(subtotal.subtract(discount));
+
+    BigDecimal shippingCost = shippingService.getShippingCost(dto.zipCode());
+    order.setShippingCost(shippingCost);
+    order.setZipCode(dto.zipCode());
+
+    order.setTotal(subtotal.subtract(discount).add(shippingCost));
 
     List<OrderItem> orderItems = createOrderItems(cart.getItems(), order);
     order.setItems(orderItems);

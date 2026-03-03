@@ -19,6 +19,8 @@ public interface OrderMapper {
   @Mapping(target = "status", ignore = true)
   @Mapping(target = "subtotal", ignore = true)
   @Mapping(target = "total", ignore = true)
+  @Mapping(target = "shippingCost", ignore = true)
+  @Mapping(target = "zipCode", ignore = true)
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)

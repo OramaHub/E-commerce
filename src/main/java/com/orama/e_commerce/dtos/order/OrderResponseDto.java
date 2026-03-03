@@ -10,7 +10,9 @@ public record OrderResponseDto(
     Instant orderDate,
     BigDecimal subtotal,
     BigDecimal discount,
+    BigDecimal shippingCost,
     BigDecimal total,
+    String zipCode,
     Long clientId,
     String clientName,
     List<OrderItemDto> items) {}
