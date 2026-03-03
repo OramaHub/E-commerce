@@ -55,7 +55,9 @@ public class AuthService {
 
     UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.email());
 
-    String accessToken = jwtService.generateToken(userDetails, client.getId(), client.getName(), client.getRole().name());
+    String accessToken =
+        jwtService.generateToken(
+            userDetails, client.getId(), client.getName(), client.getRole().name());
     RefreshToken refreshToken = refreshTokenService.createRefreshToken(client);
 
     return new AuthResponseDto(
@@ -68,7 +70,9 @@ public class AuthService {
 
     Client client = newToken.getClient();
     UserDetails userDetails = userDetailsService.loadUserByUsername(client.getEmail());
-    String accessToken = jwtService.generateToken(userDetails, client.getId(), client.getName(), client.getRole().name());
+    String accessToken =
+        jwtService.generateToken(
+            userDetails, client.getId(), client.getName(), client.getRole().name());
 
     return new AuthResponseDto(
         accessToken, newToken.getToken(), jwtService.getAccessExpirationTime());

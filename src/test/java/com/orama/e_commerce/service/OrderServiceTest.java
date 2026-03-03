@@ -33,6 +33,7 @@ class OrderServiceTest {
   @Mock private OrderRepository orderRepository;
   @Mock private CartRepository cartRepository;
   @Mock private OrderMapper orderMapper;
+  @Mock private ShippingService shippingService;
 
   @InjectMocks private OrderService orderService;
 
@@ -82,7 +83,9 @@ class OrderServiceTest {
             Instant.now(),
             new BigDecimal("200.00"),
             BigDecimal.ZERO,
-            new BigDecimal("200.00"),
+            new BigDecimal("60.00"),
+            new BigDecimal("260.00"),
+            "01310-100",
             1L,
             "João Silva",
             Collections.emptyList());
@@ -90,13 +93,14 @@ class OrderServiceTest {
 
   @Test
   void shouldCreateOrder() {
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
     when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+    when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
 
     OrderResponseDto result = orderService.createOrder(requestDto);
 
@@ -107,13 +111,15 @@ class OrderServiceTest {
 
   @Test
   void shouldCreateOrderWithDiscount() {
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, new BigDecimal("50.00"));
+    CreateOrderRequestDto requestDto =
+        new CreateOrderRequestDto(1L, new BigDecimal("50.00"), "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
     when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+    when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
 
     OrderResponseDto result = orderService.createOrder(requestDto);
 
@@ -123,7 +129,7 @@ class OrderServiceTest {
 
   @Test
   void shouldThrowCartNotFoundExceptionWhenCartNotFound() {
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(99L, BigDecimal.ZERO);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(99L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -133,7 +139,7 @@ class OrderServiceTest {
   @Test
   void shouldThrowIllegalArgumentExceptionWhenCartIsEmpty() {
     cart.setItems(new ArrayList<>());
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
 
@@ -143,7 +149,7 @@ class OrderServiceTest {
   @Test
   void shouldThrowIllegalArgumentExceptionWhenCartItemsIsNull() {
     cart.setItems(null);
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
 
@@ -152,7 +158,8 @@ class OrderServiceTest {
 
   @Test
   void shouldThrowInvalidDiscountExceptionWhenDiscountExceedsSubtotal() {
-    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, new BigDecimal("300.00"));
+    CreateOrderRequestDto requestDto =
+        new CreateOrderRequestDto(1L, new BigDecimal("300.00"), "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
