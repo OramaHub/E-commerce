@@ -13,6 +13,9 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
     clean-disabled: false
+  mail:
+    username: test@test.com
+    password: test-password
 
 server:
   port: 0
@@ -31,6 +34,14 @@ admin:
 
 stripe:
   secret-key: sk_test_fake_key_for_tests
+
+cloudflare:
+  r2:
+    account-id: test-account-id
+    access-key-id: test-access-key
+    secret-access-key: test-secret-key
+    bucket-name: test-bucket
+    public-url: https://test.r2.dev
 
 rate-limit:
   default-requests-per-minute: 100

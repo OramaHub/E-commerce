@@ -1,9 +1,11 @@
 package com.orama.e_commerce.exceptions.handler;
 
 import com.orama.e_commerce.exceptions.BadRequestException;
+import com.orama.e_commerce.exceptions.StorageException;
 import com.orama.e_commerce.exceptions.auth.InvalidPasswordResetTokenException;
 import com.orama.e_commerce.exceptions.auth.InvalidRefreshTokenException;
 import com.orama.e_commerce.exceptions.client.*;
+import com.orama.e_commerce.exceptions.media.MediaLibraryNotFoundException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyInactiveException;
 import com.orama.e_commerce.exceptions.product.ProductNotFoundException;
@@ -192,6 +194,24 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .contentType(MediaType.APPLICATION_JSON)
         .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
+  }
+
+  @ExceptionHandler(MediaLibraryNotFoundException.class)
+  public ResponseEntity<ErrorMessage> handleMediaLibraryNotFoundException(
+      MediaLibraryNotFoundException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, ex.getMessage()));
+  }
+
+  @ExceptionHandler(StorageException.class)
+  public ResponseEntity<ErrorMessage> handleStorageException(
+      StorageException ex, HttpServletRequest request) {
+    logger.error("********** API ERROR **********", ex);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()));
   }
 
   @ExceptionHandler(BadRequestException.class)
