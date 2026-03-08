@@ -81,6 +81,7 @@ class OrderServiceTest {
             1L,
             "ORD-123",
             Instant.now(),
+            OrderStatus.PENDING,
             new BigDecimal("200.00"),
             BigDecimal.ZERO,
             new BigDecimal("60.00"),
@@ -258,7 +259,7 @@ class OrderServiceTest {
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
 
-    OrderResponseDto result = orderService.cancelOrder(1L);
+    OrderResponseDto result = orderService.cancelOrder(1L, 1L);
 
     assertNotNull(result);
     assertEquals(OrderStatus.CANCELLED, order.getStatus());
@@ -266,9 +267,31 @@ class OrderServiceTest {
   }
 
   @Test
+  void shouldCancelOrderWithNullAuthenticatedClientId() {
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+    when(orderRepository.save(any(Order.class))).thenReturn(order);
+    when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+
+    OrderResponseDto result = orderService.cancelOrder(1L, null);
+
+    assertNotNull(result);
+    assertEquals(OrderStatus.CANCELLED, order.getStatus());
+    verify(orderRepository).save(order);
+  }
+
+  @Test
+  void shouldThrowAccessDeniedWhenCancellingOrderOfAnotherClient() {
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+    assertThrows(
+        org.springframework.security.access.AccessDeniedException.class,
+        () -> orderService.cancelOrder(1L, 999L));
+  }
+
+  @Test
   void shouldThrowOrderNotFoundExceptionWhenCancellingNonExistentOrder() {
     when(orderRepository.findById(99L)).thenReturn(Optional.empty());
 
-    assertThrows(OrderNotFoundException.class, () -> orderService.cancelOrder(99L));
+    assertThrows(OrderNotFoundException.class, () -> orderService.cancelOrder(99L, 1L));
   }
 }

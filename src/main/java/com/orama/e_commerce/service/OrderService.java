@@ -126,11 +126,16 @@ public class OrderService {
   }
 
   @Transactional
-  public OrderResponseDto cancelOrder(Long id) {
+  public OrderResponseDto cancelOrder(Long id, Long authenticatedClientId) {
     Order order =
         orderRepository
             .findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
+
+    if (authenticatedClientId != null && !order.getClient().getId().equals(authenticatedClientId)) {
+      throw new org.springframework.security.access.AccessDeniedException(
+          "Você não tem permissão para cancelar este pedido");
+    }
 
     order.setStatus(OrderStatus.CANCELLED);
     Order cancelledOrder = orderRepository.save(order);

@@ -27,7 +27,6 @@ public interface OrderMapper {
   @Mapping(target = "deliveryAddress", ignore = true)
   Order toEntity(CreateOrderRequestDto dto);
 
-  @Mapping(target = "id", ignore = true)
   @Mapping(target = "clientId", source = "client.id")
   @Mapping(target = "clientName", source = "client.name")
   OrderResponseDto toResponseDto(Order order);
