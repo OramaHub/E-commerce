@@ -78,7 +78,18 @@ public class OrderController {
   @PatchMapping("/{id}/cancel")
   @Operation(summary = "Cancela pedido")
   public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable Long id) {
-    OrderResponseDto dto = orderService.cancelOrder(id);
+    OrderResponseDto dto = orderService.cancelOrder(id, getAuthenticatedClientId());
     return ResponseEntity.ok(dto);
+  }
+
+  private Long getAuthenticatedClientId() {
+    var auth =
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+            .getAuthentication();
+    if (auth != null && auth.getDetails() instanceof java.util.Map<?, ?> details) {
+      Object id = details.get("id");
+      return id != null ? Long.valueOf(id.toString()) : null;
+    }
+    return null;
   }
 }
