@@ -26,7 +26,8 @@ services:
       dockerfile: Dockerfile
     container_name: ecommerce-app
     environment:
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
       POSTGRES_HOST: jdbc:postgresql://postgres:5432/ecommerce_db
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: postgres

@@ -25,6 +25,8 @@ public interface OrderMapper {
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)
   @Mapping(target = "deliveryAddress", ignore = true)
+  @Mapping(target = "paymentId", ignore = true)
+  @Mapping(target = "paymentMethod", ignore = true)
   Order toEntity(CreateOrderRequestDto dto);
 
   @Mapping(target = "id", ignore = true)

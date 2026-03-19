@@ -1,0 +1,53 @@
+package com.orama.e_commerce.controller;
+
+import com.orama.e_commerce.dtos.payment.InitiatePaymentRequestDto;
+import com.orama.e_commerce.dtos.payment.InitiatePaymentResponseDto;
+import com.orama.e_commerce.dtos.payment.MercadoPagoWebhookDto;
+import com.orama.e_commerce.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/payments")
+@Tag(name = "Pagamentos / Mercado Pago")
+public class PaymentController {
+
+  private final PaymentService paymentService;
+
+  public PaymentController(PaymentService paymentService) {
+    this.paymentService = paymentService;
+  }
+
+  @PostMapping("/orders/{orderId}")
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+  @Operation(summary = "Inicia o pagamento de um pedido via Mercado Pago")
+  public ResponseEntity<InitiatePaymentResponseDto> initiatePayment(
+      @PathVariable Long orderId, @Valid @RequestBody InitiatePaymentRequestDto dto) {
+    return ResponseEntity.ok(paymentService.initiatePayment(orderId, dto));
+  }
+
+  @PostMapping("/webhook")
+  @Operation(summary = "Webhook de notificações do Mercado Pago")
+  public ResponseEntity<Void> webhook(
+      @RequestHeader(value = "x-signature", required = false) String xSignature,
+      @RequestHeader(value = "x-request-id", required = false) String xRequestId,
+      @RequestBody MercadoPagoWebhookDto dto) {
+    try {
+      paymentService.handleWebhook(xSignature, xRequestId, dto);
+    } catch (SecurityException e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    } catch (Exception ignored) {
+    }
+    return ResponseEntity.ok().build();
+  }
+}

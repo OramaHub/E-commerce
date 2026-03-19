@@ -32,8 +32,9 @@ admin:
   cpf: "00000000000"
   phone: "(00) 00000-0000"
 
-stripe:
-  secret-key: sk_test_fake_key_for_tests
+mercadopago:
+  access-token: TEST-fake-access-token-for-tests
+  webhook-secret: fake-webhook-secret-for-tests
 
 cloudflare:
   r2:

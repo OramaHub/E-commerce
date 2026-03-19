@@ -15,4 +15,6 @@ public record OrderResponseDto(
     String zipCode,
     Long clientId,
     String clientName,
+    String paymentId,
+    String paymentMethod,
     List<OrderItemDto> items) {}
