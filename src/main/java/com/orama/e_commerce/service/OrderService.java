@@ -82,11 +82,16 @@ public class OrderService {
     return orderMapper.toResponseDto(savedOrder);
   }
 
-  public OrderResponseDto getOrderById(Long id) {
+  public OrderResponseDto getOrderById(Long id, Long requestingClientId) {
     Order order =
         orderRepository
             .findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
+
+    if (requestingClientId != null && !order.getClient().getId().equals(requestingClientId)) {
+      throw new org.springframework.security.access.AccessDeniedException(
+          "Acesso negado ao pedido.");
+    }
 
     return orderMapper.toResponseDto(order);
   }
