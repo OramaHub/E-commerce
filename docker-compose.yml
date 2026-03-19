@@ -6,8 +6,8 @@ services:
     container_name: ecommerce-postgres
     environment:
       POSTGRES_DB: ecommerce_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5600:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,28 +27,28 @@ services:
     container_name: ecommerce-app
     environment:
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
-      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
-      POSTGRES_HOST: jdbc:postgresql://postgres:5432/ecommerce_db
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
-      JWT_SECRET: aHd3+Bb2oLpGVW889uDOSGOgWb2H+YtcDWRtfsiuMbE=
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET}
+      POSTGRES_HOST: "jdbc:postgresql://postgres:5432/ecommerce_db"
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       ACCESS_EXPIRATION: ${ACCESS_EXPIRATION}
       REFRESH_EXPIRATION: ${REFRESH_EXPIRATION}
-      ADMIN_EMAIL: admin@email.com
-      ADMIN_PASSWORD: 123456
-      ADMIN_NAME: First Admin
-      ADMIN_CPF: "00000000000"
-      ADMIN_PHONE: "(00) 00000-0000"
-      SPRING_PROFILES_ACTIVE: docker
-      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_CPF: ${ADMIN_CPF}
+      ADMIN_PHONE: ${ADMIN_PHONE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID}
       CLOUDFLARE_R2_ACCESS_KEY_ID: ${CLOUDFLARE_R2_ACCESS_KEY_ID}
       CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
       CLOUDFLARE_R2_BUCKET_NAME: ${CLOUDFLARE_R2_BUCKET_NAME}
       CLOUDFLARE_R2_PUBLIC_URL: ${CLOUDFLARE_R2_PUBLIC_URL}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "8080:8081"
     depends_on:
@@ -61,7 +61,7 @@ services:
     image: sosedoff/pgweb:latest
     container_name: ecommerce-pgweb
     environment:
-      PGWEB_DATABASE_URL: postgres://postgres:postgres@postgres:5432/ecommerce_db?sslmode=disable
+      PGWEB_DATABASE_URL: "postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/ecommerce_db?sslmode=disable"
     ports:
       - "8081:8081"
     depends_on:
