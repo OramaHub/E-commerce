@@ -42,6 +42,12 @@ public class Order {
   @Column(name = "zip_code", length = 9)
   private String zipCode;
 
+  @Column(name = "payment_id", length = 100)
+  private String paymentId;
+
+  @Column(name = "payment_method", length = 50)
+  private String paymentMethod;
+
   @OneToMany(
       mappedBy = "order",
       fetch = FetchType.LAZY,
@@ -169,6 +175,22 @@ public class Order {
 
   public void setItems(List<OrderItem> items) {
     this.items = items;
+  }
+
+  public String getPaymentId() {
+    return paymentId;
+  }
+
+  public void setPaymentId(String paymentId) {
+    this.paymentId = paymentId;
+  }
+
+  public String getPaymentMethod() {
+    return paymentMethod;
+  }
+
+  public void setPaymentMethod(String paymentMethod) {
+    this.paymentMethod = paymentMethod;
   }
 
   @Override

@@ -52,10 +52,9 @@ admin:
   cpf: ${ADMIN_CPF}
   phone: ${ADMIN_PHONE}
 
-stripe:
-  secret-key: ${STRIPE_SECRET_KEY}
-  success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/checkout/success}
-  cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/checkout/cancel}
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN}
+  webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
 
 cloudflare:
   r2:
@@ -74,5 +73,7 @@ rate-limit:
       requests-per-minute: 5
     "POST:/api/orders":
       requests-per-minute: 30
+    "POST:/api/payments/orders/**":
+      requests-per-minute: 10
     "POST:/api/auth/forgot-password":
       requests-per-minute: 3
