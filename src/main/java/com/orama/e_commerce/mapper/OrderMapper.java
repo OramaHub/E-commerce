@@ -31,6 +31,12 @@ public interface OrderMapper {
 
   @Mapping(target = "clientId", source = "client.id")
   @Mapping(target = "clientName", source = "client.name")
+  @Mapping(target = "deliveryAddressId", source = "deliveryAddress.id")
+  @Mapping(target = "deliveryStreet", source = "deliveryAddress.street")
+  @Mapping(target = "deliveryNumber", source = "deliveryAddress.number")
+  @Mapping(target = "deliveryDistrict", source = "deliveryAddress.district")
+  @Mapping(target = "deliveryCity", source = "deliveryAddress.city.name")
+  @Mapping(target = "deliveryState", source = "deliveryAddress.city.state.abbreviation")
   OrderResponseDto toResponseDto(Order order);
 
   @Mapping(target = "productId", source = "product.id")

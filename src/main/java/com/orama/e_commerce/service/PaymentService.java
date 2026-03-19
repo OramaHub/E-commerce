@@ -71,6 +71,9 @@ public class PaymentService {
 
     Client client = order.getClient();
     Address address = order.getDeliveryAddress();
+    if (address == null && client.getAddresses() != null && !client.getAddresses().isEmpty()) {
+      address = client.getAddresses().get(0);
+    }
 
     List<OrderItemRequest> items =
         order.getItems().stream()
@@ -172,11 +175,8 @@ public class PaymentService {
       OrderClient orderClient = new OrderClient();
       Order mpOrder = orderClient.get(dto.data().id());
 
-      String externalReference = mpOrder.getExternalReference();
-      if (externalReference == null) return;
-
       com.orama.e_commerce.models.Order order =
-          orderRepository.findByOrderNumber(externalReference).orElse(null);
+          orderRepository.findByPaymentId(mpOrder.getId()).orElse(null);
       if (order == null) return;
 
       if (mpOrder.getTransactions() != null
@@ -205,7 +205,7 @@ public class PaymentService {
   private OrderPaymentMethodRequest buildPaymentMethod(InitiatePaymentRequestDto dto) {
     return switch (dto.paymentType()) {
       case "PIX" -> OrderPaymentMethodRequest.builder().id("pix").type("bank_transfer").build();
-      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("bolbradesco").type("ticket").build();
+      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("boleto").type("ticket").build();
       case "CREDIT_CARD" -> OrderPaymentMethodRequest.builder()
           .id(dto.paymentMethodId())
           .type("credit_card")
