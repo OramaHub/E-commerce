@@ -1,7 +1,6 @@
 package com.orama.e_commerce.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.orama.e_commerce.dtos.location.CityResponseDto;
@@ -20,9 +19,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestClient;
 
 @ExtendWith(MockitoExtension.class)
 class LocationServiceTest {
@@ -31,10 +30,8 @@ class LocationServiceTest {
   @Mock private StateRepository stateRepository;
   @Mock private CityRepository cityRepository;
   @Mock private LocationMapper locationMapper;
-  @Mock private RestClient.Builder restClientBuilder;
-  @Mock private RestClient restClient;
 
-  private LocationService locationService;
+  @InjectMocks private LocationService locationService;
 
   private Country country;
   private State state;
@@ -46,12 +43,6 @@ class LocationServiceTest {
 
   @BeforeEach
   void setUp() {
-    when(restClientBuilder.baseUrl(anyString())).thenReturn(restClientBuilder);
-    when(restClientBuilder.build()).thenReturn(restClient);
-    locationService =
-        new LocationService(
-            countryRepository, stateRepository, cityRepository, locationMapper, restClientBuilder);
-
     country = new Country();
     country.setId(1L);
     country.setName("Brasil");

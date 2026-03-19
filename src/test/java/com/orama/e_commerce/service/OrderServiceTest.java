@@ -2,7 +2,6 @@ package com.orama.e_commerce.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.orama.e_commerce.dtos.order.CreateOrderRequestDto;
@@ -13,7 +12,6 @@ import com.orama.e_commerce.exceptions.order.InvalidDiscountException;
 import com.orama.e_commerce.exceptions.order.OrderNotFoundException;
 import com.orama.e_commerce.mapper.OrderMapper;
 import com.orama.e_commerce.models.*;
-import com.orama.e_commerce.repository.AddressRepository;
 import com.orama.e_commerce.repository.CartRepository;
 import com.orama.e_commerce.repository.OrderRepository;
 import java.math.BigDecimal;
@@ -34,7 +32,6 @@ class OrderServiceTest {
 
   @Mock private OrderRepository orderRepository;
   @Mock private CartRepository cartRepository;
-  @Mock private AddressRepository addressRepository;
   @Mock private OrderMapper orderMapper;
   @Mock private ShippingService shippingService;
 
@@ -45,7 +42,6 @@ class OrderServiceTest {
   private Product product;
   private CartItem cartItem;
   private Order order;
-  private Address address;
   private OrderResponseDto orderResponseDto;
 
   @BeforeEach
@@ -69,9 +65,6 @@ class OrderServiceTest {
     cart.setId(1L);
     cart.setClient(client);
     cart.setItems(List.of(cartItem));
-
-    address = new Address();
-    address.setId(1L);
 
     order = new Order();
     order.setId(1L);
@@ -98,19 +91,12 @@ class OrderServiceTest {
             "João Silva",
             null,
             null,
-            Collections.emptyList(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+            Collections.emptyList());
   }
 
   @Test
   void shouldCreateOrder() {
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100", 1L);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
@@ -118,8 +104,6 @@ class OrderServiceTest {
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
     when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
-    when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
-    when(addressRepository.existsByIdAndClientId(1L, 1L)).thenReturn(true);
 
     OrderResponseDto result = orderService.createOrder(requestDto);
 
@@ -131,7 +115,7 @@ class OrderServiceTest {
   @Test
   void shouldCreateOrderWithDiscount() {
     CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, new BigDecimal("50.00"), "01310-100", 1L);
+        new CreateOrderRequestDto(1L, new BigDecimal("50.00"), "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
@@ -139,8 +123,6 @@ class OrderServiceTest {
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
     when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
-    when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
-    when(addressRepository.existsByIdAndClientId(1L, 1L)).thenReturn(true);
 
     OrderResponseDto result = orderService.createOrder(requestDto);
 
@@ -150,8 +132,7 @@ class OrderServiceTest {
 
   @Test
   void shouldThrowCartNotFoundExceptionWhenCartNotFound() {
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(99L, BigDecimal.ZERO, "01310-100", 1L);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(99L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -161,8 +142,7 @@ class OrderServiceTest {
   @Test
   void shouldThrowIllegalArgumentExceptionWhenCartIsEmpty() {
     cart.setItems(new ArrayList<>());
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100", 1L);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
 
@@ -172,8 +152,7 @@ class OrderServiceTest {
   @Test
   void shouldThrowIllegalArgumentExceptionWhenCartItemsIsNull() {
     cart.setItems(null);
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100", 1L);
+    CreateOrderRequestDto requestDto = new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
 
@@ -183,43 +162,12 @@ class OrderServiceTest {
   @Test
   void shouldThrowInvalidDiscountExceptionWhenDiscountExceedsSubtotal() {
     CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, new BigDecimal("300.00"), "01310-100", 1L);
+        new CreateOrderRequestDto(1L, new BigDecimal("300.00"), "01310-100");
 
     when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
     when(orderMapper.toEntity(requestDto)).thenReturn(order);
 
     assertThrows(InvalidDiscountException.class, () -> orderService.createOrder(requestDto));
-  }
-
-  @Test
-  void shouldThrowIllegalArgumentExceptionWhenAddressNotFound() {
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100", 99L);
-
-    when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
-    when(orderMapper.toEntity(requestDto)).thenReturn(order);
-    when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
-    when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
-    when(addressRepository.findById(99L)).thenReturn(Optional.empty());
-
-    assertThrows(IllegalArgumentException.class, () -> orderService.createOrder(requestDto));
-  }
-
-  @Test
-  void shouldThrowAccessDeniedWhenAddressDoesNotBelongToClient() {
-    CreateOrderRequestDto requestDto =
-        new CreateOrderRequestDto(1L, BigDecimal.ZERO, "01310-100", 1L);
-
-    when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
-    when(orderMapper.toEntity(requestDto)).thenReturn(order);
-    when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
-    when(shippingService.getShippingCost("01310-100")).thenReturn(new BigDecimal("60.00"));
-    when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
-    when(addressRepository.existsByIdAndClientId(1L, 1L)).thenReturn(false);
-
-    assertThrows(
-        org.springframework.security.access.AccessDeniedException.class,
-        () -> orderService.createOrder(requestDto));
   }
 
   @Test

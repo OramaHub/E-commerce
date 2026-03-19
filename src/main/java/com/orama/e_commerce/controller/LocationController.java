@@ -1,6 +1,5 @@
 package com.orama.e_commerce.controller;
 
-import com.orama.e_commerce.dtos.location.CepLookupResponseDto;
 import com.orama.e_commerce.dtos.location.CityResponseDto;
 import com.orama.e_commerce.dtos.location.CitySimpleDto;
 import com.orama.e_commerce.dtos.location.CountryResponseDto;
@@ -105,12 +104,5 @@ public class LocationController {
   public ResponseEntity<Long> countCities() {
     long count = cityImportService.countCities();
     return ResponseEntity.ok(count);
-  }
-
-  @GetMapping("/cep/{cep}")
-  @Operation(
-      summary = "Busca endereço pelo CEP e retorna dados com cityId para formulário de endereço")
-  public ResponseEntity<CepLookupResponseDto> lookupCep(@PathVariable String cep) {
-    return ResponseEntity.ok(locationService.lookupCep(cep));
   }
 }

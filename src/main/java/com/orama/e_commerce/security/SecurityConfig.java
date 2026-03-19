@@ -50,7 +50,6 @@ public class SecurityConfig {
                         "/api/auth/forgot-password",
                         "/api/auth/reset-password",
                         "/api/shipping/**",
-                        "/api/locations/cep/**",
                         "/api/payments/webhook")
                     .permitAll()
                     .requestMatchers(

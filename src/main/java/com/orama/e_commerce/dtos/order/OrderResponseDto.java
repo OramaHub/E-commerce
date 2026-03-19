@@ -19,10 +19,4 @@ public record OrderResponseDto(
     String clientName,
     String paymentId,
     String paymentMethod,
-    List<OrderItemDto> items,
-    Long deliveryAddressId,
-    String deliveryStreet,
-    String deliveryNumber,
-    String deliveryDistrict,
-    String deliveryCity,
-    String deliveryState) {}
+    List<OrderItemDto> items) {}
