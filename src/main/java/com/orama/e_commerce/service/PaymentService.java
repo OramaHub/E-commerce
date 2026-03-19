@@ -32,12 +32,15 @@ import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PaymentService {
 
+  private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
   private static final Gson GSON = new Gson();
 
   private final OrderRepository orderRepository;
@@ -121,7 +124,14 @@ public class PaymentService {
           paymentMethodResponse != null ? paymentMethodResponse.getTicketUrl() : null,
           paymentMethodResponse != null ? paymentMethodResponse.getDigitableLine() : null);
 
-    } catch (MPException | MPApiException e) {
+    } catch (MPApiException e) {
+      log.error(
+          "MP API error - status: {}, body: {}",
+          e.getApiResponse().getStatusCode(),
+          e.getApiResponse().getContent());
+      throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
+    } catch (MPException e) {
+      log.error("MP SDK error: {}", e.getMessage());
       throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
     }
   }
