@@ -258,9 +258,9 @@ public class PaymentService {
   }
 
   private String[] splitName(String fullName) {
-    if (fullName == null || fullName.isBlank()) return new String[] {"", ""};
+    if (fullName == null || fullName.isBlank()) return new String[] {"N/A", "N/A"};
     int spaceIndex = fullName.indexOf(' ');
-    if (spaceIndex == -1) return new String[] {fullName, ""};
+    if (spaceIndex == -1) return new String[] {fullName, fullName};
     return new String[] {fullName.substring(0, spaceIndex), fullName.substring(spaceIndex + 1)};
   }
 
