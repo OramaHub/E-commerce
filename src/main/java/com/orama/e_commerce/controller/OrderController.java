@@ -33,11 +33,11 @@ public class OrderController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or authentication.details['id'] != null")
   @GetMapping("/{id}")
   @Operation(summary = "Busca pedido pelo id")
   public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id) {
-    OrderResponseDto dto = orderService.getOrderById(id);
+    OrderResponseDto dto = orderService.getOrderById(id, getAuthenticatedClientId());
     return ResponseEntity.ok(dto);
   }
 

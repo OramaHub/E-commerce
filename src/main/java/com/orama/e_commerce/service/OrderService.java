@@ -7,10 +7,12 @@ import com.orama.e_commerce.exceptions.cart.CartNotFoundException;
 import com.orama.e_commerce.exceptions.order.InvalidDiscountException;
 import com.orama.e_commerce.exceptions.order.OrderNotFoundException;
 import com.orama.e_commerce.mapper.OrderMapper;
+import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Cart;
 import com.orama.e_commerce.models.CartItem;
 import com.orama.e_commerce.models.Order;
 import com.orama.e_commerce.models.OrderItem;
+import com.orama.e_commerce.repository.AddressRepository;
 import com.orama.e_commerce.repository.CartRepository;
 import com.orama.e_commerce.repository.OrderRepository;
 import jakarta.transaction.Transactional;
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,16 +28,19 @@ public class OrderService {
 
   private final OrderRepository orderRepository;
   private final CartRepository cartRepository;
+  private final AddressRepository addressRepository;
   private final OrderMapper orderMapper;
   private final ShippingService shippingService;
 
   public OrderService(
       OrderRepository orderRepository,
       CartRepository cartRepository,
+      AddressRepository addressRepository,
       OrderMapper orderMapper,
       ShippingService shippingService) {
     this.orderRepository = orderRepository;
     this.cartRepository = cartRepository;
+    this.addressRepository = addressRepository;
     this.orderMapper = orderMapper;
     this.shippingService = shippingService;
   }
@@ -72,6 +78,20 @@ public class OrderService {
     order.setShippingCost(shippingCost);
     order.setZipCode(dto.zipCode());
 
+    Address deliveryAddress =
+        addressRepository
+            .findById(dto.deliveryAddressId())
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Endereço de entrega não encontrado com id: " + dto.deliveryAddressId()));
+
+    if (!addressRepository.existsByIdAndClientId(
+        dto.deliveryAddressId(), cart.getClient().getId())) {
+      throw new AccessDeniedException("Endereço não pertence ao cliente");
+    }
+
+    order.setDeliveryAddress(deliveryAddress);
     order.setTotal(subtotal.subtract(discount).add(shippingCost));
 
     List<OrderItem> orderItems = createOrderItems(cart.getItems(), order);
@@ -82,11 +102,16 @@ public class OrderService {
     return orderMapper.toResponseDto(savedOrder);
   }
 
-  public OrderResponseDto getOrderById(Long id) {
+  public OrderResponseDto getOrderById(Long id, Long requestingClientId) {
     Order order =
         orderRepository
             .findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
+
+    if (requestingClientId != null && !order.getClient().getId().equals(requestingClientId)) {
+      throw new org.springframework.security.access.AccessDeniedException(
+          "Acesso negado ao pedido.");
+    }
 
     return orderMapper.toResponseDto(order);
   }

@@ -17,6 +17,8 @@ import com.mercadopago.resources.common.Identification;
 import com.mercadopago.resources.order.Order;
 import com.mercadopago.resources.order.OrderPayment;
 import com.mercadopago.resources.order.OrderPaymentMethod;
+import com.mercadopago.serialization.Serializer;
+import com.orama.e_commerce.config.CustomOrderClient;
 import com.orama.e_commerce.dtos.payment.InitiatePaymentRequestDto;
 import com.orama.e_commerce.dtos.payment.InitiatePaymentResponseDto;
 import com.orama.e_commerce.dtos.payment.MercadoPagoWebhookDto;
@@ -32,12 +34,15 @@ import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PaymentService {
 
+  private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
   private static final Gson GSON = new Gson();
 
   private final OrderRepository orderRepository;
@@ -66,6 +71,9 @@ public class PaymentService {
 
     Client client = order.getClient();
     Address address = order.getDeliveryAddress();
+    if (address == null && client.getAddresses() != null && !client.getAddresses().isEmpty()) {
+      address = client.getAddresses().get(0);
+    }
 
     List<OrderItemRequest> items =
         order.getItems().stream()
@@ -81,8 +89,9 @@ public class PaymentService {
         OrderCreateRequest.builder()
             .type("online")
             .processingMode("automatic")
+            .captureMode("automatic_async")
             .totalAmount(order.getTotal().toPlainString())
-            .externalReference(order.getOrderNumber())
+            .externalReference(order.getOrderNumber().replaceAll("[^a-zA-Z0-9_-]", "_"))
             .payer(buildPayer(client, address))
             .items(items)
             .transactions(
@@ -97,13 +106,32 @@ public class PaymentService {
             .build();
 
     try {
-      OrderClient orderClient = new OrderClient();
+      JsonObject payload = Serializer.serializeToJson(request);
+
+      boolean isCard = "CREDIT_CARD".equals(dto.paymentType());
+      JsonObject paymentMethod =
+          payload
+              .getAsJsonObject("transactions")
+              .getAsJsonArray("payments")
+              .get(0)
+              .getAsJsonObject()
+              .getAsJsonObject("payment_method");
+
+      if (!isCard) {
+        paymentMethod.remove("installments");
+        paymentMethod.remove("statement_descriptor");
+      } else {
+        paymentMethod.addProperty(
+            "installments", dto.installments() != null ? dto.installments() : 1);
+      }
+
+      CustomOrderClient orderClient = new CustomOrderClient();
       MPRequestOptions options =
           MPRequestOptions.builder()
               .customHeaders(Map.of("X-Idempotency-Key", UUID.randomUUID().toString()))
               .build();
 
-      Order mpOrder = orderClient.create(request, options);
+      Order mpOrder = orderClient.createOrder(payload, options);
 
       order.setPaymentId(mpOrder.getId());
       orderRepository.save(order);
@@ -121,7 +149,14 @@ public class PaymentService {
           paymentMethodResponse != null ? paymentMethodResponse.getTicketUrl() : null,
           paymentMethodResponse != null ? paymentMethodResponse.getDigitableLine() : null);
 
-    } catch (MPException | MPApiException e) {
+    } catch (MPApiException e) {
+      log.error(
+          "MP API error - status: {}, body: {}",
+          e.getApiResponse().getStatusCode(),
+          e.getApiResponse().getContent());
+      throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
+    } catch (MPException e) {
+      log.error("MP SDK error: {}", e.getMessage());
       throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
     }
   }
@@ -140,11 +175,8 @@ public class PaymentService {
       OrderClient orderClient = new OrderClient();
       Order mpOrder = orderClient.get(dto.data().id());
 
-      String externalReference = mpOrder.getExternalReference();
-      if (externalReference == null) return;
-
       com.orama.e_commerce.models.Order order =
-          orderRepository.findByOrderNumber(externalReference).orElse(null);
+          orderRepository.findByPaymentId(mpOrder.getId()).orElse(null);
       if (order == null) return;
 
       if (mpOrder.getTransactions() != null
@@ -173,7 +205,7 @@ public class PaymentService {
   private OrderPaymentMethodRequest buildPaymentMethod(InitiatePaymentRequestDto dto) {
     return switch (dto.paymentType()) {
       case "PIX" -> OrderPaymentMethodRequest.builder().id("pix").type("bank_transfer").build();
-      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("bolbradesco").type("ticket").build();
+      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("boleto").type("ticket").build();
       case "CREDIT_CARD" -> OrderPaymentMethodRequest.builder()
           .id(dto.paymentMethodId())
           .type("credit_card")
@@ -226,9 +258,9 @@ public class PaymentService {
   }
 
   private String[] splitName(String fullName) {
-    if (fullName == null || fullName.isBlank()) return new String[] {"", ""};
+    if (fullName == null || fullName.isBlank()) return new String[] {"N/A", "N/A"};
     int spaceIndex = fullName.indexOf(' ');
-    if (spaceIndex == -1) return new String[] {fullName, ""};
+    if (spaceIndex == -1) return new String[] {fullName, fullName};
     return new String[] {fullName.substring(0, spaceIndex), fullName.substring(spaceIndex + 1)};
   }
 
