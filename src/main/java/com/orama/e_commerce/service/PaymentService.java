@@ -85,7 +85,7 @@ public class PaymentService {
             .type("online")
             .processingMode("automatic")
             .totalAmount(order.getTotal().toPlainString())
-            .externalReference(order.getOrderNumber())
+            .externalReference(order.getOrderNumber().replaceAll("[^a-zA-Z0-9_-]", "_"))
             .payer(buildPayer(client, address))
             .items(items)
             .transactions(
@@ -188,7 +188,6 @@ public class PaymentService {
           .id(dto.paymentMethodId())
           .type("credit_card")
           .token(dto.cardToken())
-          .installments(dto.installments() != null ? dto.installments() : 1)
           .build();
       default -> throw new IllegalArgumentException(
           "Método de pagamento inválido: " + dto.paymentType());
