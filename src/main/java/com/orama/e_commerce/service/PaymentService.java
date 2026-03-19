@@ -17,6 +17,8 @@ import com.mercadopago.resources.common.Identification;
 import com.mercadopago.resources.order.Order;
 import com.mercadopago.resources.order.OrderPayment;
 import com.mercadopago.resources.order.OrderPaymentMethod;
+import com.mercadopago.serialization.Serializer;
+import com.orama.e_commerce.config.CustomOrderClient;
 import com.orama.e_commerce.dtos.payment.InitiatePaymentRequestDto;
 import com.orama.e_commerce.dtos.payment.InitiatePaymentResponseDto;
 import com.orama.e_commerce.dtos.payment.MercadoPagoWebhookDto;
@@ -84,6 +86,7 @@ public class PaymentService {
         OrderCreateRequest.builder()
             .type("online")
             .processingMode("automatic")
+            .captureMode("automatic_async")
             .totalAmount(order.getTotal().toPlainString())
             .externalReference(order.getOrderNumber().replaceAll("[^a-zA-Z0-9_-]", "_"))
             .payer(buildPayer(client, address))
@@ -100,13 +103,32 @@ public class PaymentService {
             .build();
 
     try {
-      OrderClient orderClient = new OrderClient();
+      JsonObject payload = Serializer.serializeToJson(request);
+
+      boolean isCard = "CREDIT_CARD".equals(dto.paymentType());
+      JsonObject paymentMethod =
+          payload
+              .getAsJsonObject("transactions")
+              .getAsJsonArray("payments")
+              .get(0)
+              .getAsJsonObject()
+              .getAsJsonObject("payment_method");
+
+      if (!isCard) {
+        paymentMethod.remove("installments");
+        paymentMethod.remove("statement_descriptor");
+      } else {
+        paymentMethod.addProperty(
+            "installments", dto.installments() != null ? dto.installments() : 1);
+      }
+
+      CustomOrderClient orderClient = new CustomOrderClient();
       MPRequestOptions options =
           MPRequestOptions.builder()
               .customHeaders(Map.of("X-Idempotency-Key", UUID.randomUUID().toString()))
               .build();
 
-      Order mpOrder = orderClient.create(request, options);
+      Order mpOrder = orderClient.createOrder(payload, options);
 
       order.setPaymentId(mpOrder.getId());
       orderRepository.save(order);
@@ -181,25 +203,18 @@ public class PaymentService {
   }
 
   private OrderPaymentMethodRequest buildPaymentMethod(InitiatePaymentRequestDto dto) {
-    JsonObject json = new JsonObject();
-    switch (dto.paymentType()) {
-      case "PIX" -> {
-        json.addProperty("id", "pix");
-        json.addProperty("type", "bank_transfer");
-      }
-      case "BOLETO" -> {
-        json.addProperty("id", "bolbradesco");
-        json.addProperty("type", "ticket");
-      }
-      case "CREDIT_CARD" -> {
-        json.addProperty("id", dto.paymentMethodId());
-        json.addProperty("type", "credit_card");
-        json.addProperty("token", dto.cardToken());
-      }
+    return switch (dto.paymentType()) {
+      case "PIX" -> OrderPaymentMethodRequest.builder().id("pix").type("bank_transfer").build();
+      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("bolbradesco").type("ticket").build();
+      case "CREDIT_CARD" -> OrderPaymentMethodRequest.builder()
+          .id(dto.paymentMethodId())
+          .type("credit_card")
+          .token(dto.cardToken())
+          .installments(dto.installments() != null ? dto.installments() : 1)
+          .build();
       default -> throw new IllegalArgumentException(
           "Método de pagamento inválido: " + dto.paymentType());
-    }
-    return GSON.fromJson(json, OrderPaymentMethodRequest.class);
+    };
   }
 
   private OrderPayerRequest buildPayer(Client client, Address address) {
