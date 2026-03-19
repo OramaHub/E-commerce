@@ -175,7 +175,7 @@ class OrderServiceTest {
     when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
 
-    OrderResponseDto result = orderService.getOrderById(1L);
+    OrderResponseDto result = orderService.getOrderById(1L, null);
 
     assertNotNull(result);
     assertEquals(1L, result.id());
@@ -186,7 +186,7 @@ class OrderServiceTest {
   void shouldThrowOrderNotFoundExceptionWhenOrderNotFoundById() {
     when(orderRepository.findById(99L)).thenReturn(Optional.empty());
 
-    assertThrows(OrderNotFoundException.class, () -> orderService.getOrderById(99L));
+    assertThrows(OrderNotFoundException.class, () -> orderService.getOrderById(99L, null));
   }
 
   @Test
