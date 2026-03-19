@@ -89,6 +89,8 @@ class OrderServiceTest {
             "01310-100",
             1L,
             "João Silva",
+            null,
+            null,
             Collections.emptyList());
   }
 
