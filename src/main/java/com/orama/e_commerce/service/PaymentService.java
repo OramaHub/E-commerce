@@ -181,17 +181,25 @@ public class PaymentService {
   }
 
   private OrderPaymentMethodRequest buildPaymentMethod(InitiatePaymentRequestDto dto) {
-    return switch (dto.paymentType()) {
-      case "PIX" -> OrderPaymentMethodRequest.builder().id("pix").type("bank_transfer").build();
-      case "BOLETO" -> OrderPaymentMethodRequest.builder().id("bolbradesco").type("ticket").build();
-      case "CREDIT_CARD" -> OrderPaymentMethodRequest.builder()
-          .id(dto.paymentMethodId())
-          .type("credit_card")
-          .token(dto.cardToken())
-          .build();
+    JsonObject json = new JsonObject();
+    switch (dto.paymentType()) {
+      case "PIX" -> {
+        json.addProperty("id", "pix");
+        json.addProperty("type", "bank_transfer");
+      }
+      case "BOLETO" -> {
+        json.addProperty("id", "bolbradesco");
+        json.addProperty("type", "ticket");
+      }
+      case "CREDIT_CARD" -> {
+        json.addProperty("id", dto.paymentMethodId());
+        json.addProperty("type", "credit_card");
+        json.addProperty("token", dto.cardToken());
+      }
       default -> throw new IllegalArgumentException(
           "Método de pagamento inválido: " + dto.paymentType());
-    };
+    }
+    return GSON.fromJson(json, OrderPaymentMethodRequest.class);
   }
 
   private OrderPayerRequest buildPayer(Client client, Address address) {
