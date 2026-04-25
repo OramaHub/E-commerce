@@ -8,6 +8,8 @@ import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.exceptions.media.MediaLibraryNotFoundException;
 import com.orama.e_commerce.exceptions.payment.OrderOwnershipException;
 import com.orama.e_commerce.exceptions.payment.PaymentAlreadyInProgressException;
+import com.orama.e_commerce.exceptions.payment.PermanentPaymentGatewayException;
+import com.orama.e_commerce.exceptions.payment.TransientPaymentGatewayException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyInactiveException;
 import com.orama.e_commerce.exceptions.product.ProductNotFoundException;
@@ -309,5 +311,31 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .contentType(MediaType.APPLICATION_JSON)
         .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+  }
+
+  @ExceptionHandler(TransientPaymentGatewayException.class)
+  public ResponseEntity<ErrorMessage> handleTransientPaymentGatewayException(
+      TransientPaymentGatewayException ex, HttpServletRequest request) {
+    logger.error("Transient payment gateway error: {}", ex.getMessage(), ex);
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            new ErrorMessage(
+                request,
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Gateway de pagamento temporariamente indisponível. Tente novamente em instantes."));
+  }
+
+  @ExceptionHandler(PermanentPaymentGatewayException.class)
+  public ResponseEntity<ErrorMessage> handlePermanentPaymentGatewayException(
+      PermanentPaymentGatewayException ex, HttpServletRequest request) {
+    logger.error("Permanent payment gateway error: {}", ex.getMessage(), ex);
+    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            new ErrorMessage(
+                request,
+                HttpStatus.BAD_GATEWAY,
+                "Não foi possível processar o pagamento no gateway. Verifique os dados e tente novamente."));
   }
 }

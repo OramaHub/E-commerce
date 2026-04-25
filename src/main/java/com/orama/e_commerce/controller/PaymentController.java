@@ -5,7 +5,7 @@ import com.orama.e_commerce.dtos.payment.InitiatePaymentResponseDto;
 import com.orama.e_commerce.dtos.payment.MercadoPagoWebhookDto;
 import com.orama.e_commerce.exceptions.payment.WebhookProcessingException;
 import com.orama.e_commerce.exceptions.payment.WebhookSignatureException;
-import com.orama.e_commerce.service.PaymentService;
+import com.orama.e_commerce.service.PaymentApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,10 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Pagamentos / Mercado Pago")
 public class PaymentController {
 
-  private final PaymentService paymentService;
+  private final PaymentApplicationService paymentApplicationService;
 
-  public PaymentController(PaymentService paymentService) {
-    this.paymentService = paymentService;
+  public PaymentController(PaymentApplicationService paymentApplicationService) {
+    this.paymentApplicationService = paymentApplicationService;
   }
 
   @PostMapping("/orders/{orderId}")
@@ -40,7 +40,7 @@ public class PaymentController {
       @Valid @RequestBody InitiatePaymentRequestDto dto,
       Authentication authentication) {
     Long clientId = (Long) ((Map<?, ?>) authentication.getDetails()).get("id");
-    return ResponseEntity.ok(paymentService.initiatePayment(orderId, clientId, dto));
+    return ResponseEntity.ok(paymentApplicationService.initiatePayment(orderId, clientId, dto));
   }
 
   @PostMapping("/webhook")
@@ -50,7 +50,7 @@ public class PaymentController {
       @RequestHeader(value = "x-request-id", required = false) String xRequestId,
       @RequestBody MercadoPagoWebhookDto dto) {
     try {
-      paymentService.handleWebhook(xSignature, xRequestId, dto);
+      paymentApplicationService.handleWebhook(xSignature, xRequestId, dto);
       return ResponseEntity.ok().build();
     } catch (WebhookSignatureException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
