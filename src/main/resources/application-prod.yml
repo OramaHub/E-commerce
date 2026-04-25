@@ -1,3 +1,6 @@
+mercadopago:
+  webhook-secret-required: true
+
 spring:
   jpa:
     hibernate:

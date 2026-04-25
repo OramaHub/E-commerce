@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -l \"enum\" \"C:\\\\Users\\\\Thiago Monteiro\\\\Downloads\\\\E-commerce\\\\src\\\\main\\\\java\\\\com\\\\orama\\\\e_commerce\\\\enums\"/*.java)",
+      "Bash(pandoc \"C:\\\\Users\\\\Thiago Monteiro\\\\OneDrive\\\\Documentos\\\\curriculo\\\\CLT, Campo Grande Remoto\\\\Curriculo 2026.docx\" -o /tmp/curriculo.md)",
+      "Bash(python \"C:\\\\Users\\\\Thiago Monteiro\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\0b8cf103-951b-43d1-80f0-925cc52d93a6\\\\9324a4e4-0aac-4466-ba8f-0c7ad0b0deb7\\\\skills\\\\docx\\\\scripts\\\\office\\\\unpack.py\" \"C:\\\\Users\\\\Thiago Monteiro\\\\OneDrive\\\\Documentos\\\\curriculo\\\\CLT, Campo Grande Remoto\\\\Curriculo 2026.docx\" /tmp/curriculo_unpacked/)",
+      "Bash(python -c ':*)"
+    ]
+  }
+}

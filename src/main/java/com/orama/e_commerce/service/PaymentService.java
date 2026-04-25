@@ -24,14 +24,18 @@ import com.orama.e_commerce.dtos.payment.InitiatePaymentResponseDto;
 import com.orama.e_commerce.dtos.payment.MercadoPagoWebhookDto;
 import com.orama.e_commerce.enums.OrderStatus;
 import com.orama.e_commerce.exceptions.order.OrderNotFoundException;
+import com.orama.e_commerce.exceptions.payment.OrderOwnershipException;
+import com.orama.e_commerce.exceptions.payment.PaymentAlreadyInProgressException;
+import com.orama.e_commerce.exceptions.payment.WebhookProcessingException;
+import com.orama.e_commerce.exceptions.payment.WebhookSignatureException;
 import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
@@ -46,22 +50,43 @@ public class PaymentService {
   private static final Gson GSON = new Gson();
 
   private final OrderRepository orderRepository;
+  private final CustomOrderClient customOrderClient;
+  private final OrderClient orderClient;
 
   @Value("${mercadopago.webhook-secret:}")
   private String webhookSecret;
 
-  public PaymentService(OrderRepository orderRepository) {
+  @Value("${mercadopago.webhook-ts-tolerance:300}")
+  private long webhookTsTolerance;
+
+  public PaymentService(
+      OrderRepository orderRepository,
+      CustomOrderClient customOrderClient,
+      OrderClient orderClient) {
     this.orderRepository = orderRepository;
+    this.customOrderClient = customOrderClient;
+    this.orderClient = orderClient;
   }
 
   @Transactional
-  public InitiatePaymentResponseDto initiatePayment(Long orderId, InitiatePaymentRequestDto dto) {
+  public InitiatePaymentResponseDto initiatePayment(
+      Long orderId, Long clientId, InitiatePaymentRequestDto dto) {
 
     com.orama.e_commerce.models.Order order =
         orderRepository
             .findById(orderId)
             .orElseThrow(
                 () -> new OrderNotFoundException("Pedido não encontrado com id: " + orderId));
+
+    if (!order.getClient().getId().equals(clientId)) {
+      throw new OrderOwnershipException(
+          "Acesso negado: o pedido não pertence ao usuário autenticado.");
+    }
+
+    if (order.getStatus() == OrderStatus.PAYMENT_PENDING) {
+      throw new PaymentAlreadyInProgressException(
+          "Já existe um pagamento em andamento para este pedido.");
+    }
 
     if (order.getStatus() == OrderStatus.PAYMENT_CONFIRMED
         || order.getStatus() == OrderStatus.CANCELLED) {
@@ -74,6 +99,14 @@ public class PaymentService {
     if (address == null && client.getAddresses() != null && !client.getAddresses().isEmpty()) {
       address = client.getAddresses().get(0);
     }
+
+    int attemptCounter = order.getPaymentAttemptCounter() + 1;
+    String idempotencyKey = "order-" + order.getId() + "-attempt-" + attemptCounter;
+
+    order.setPaymentAttemptCounter(attemptCounter);
+    order.setPaymentIdempotencyKey(idempotencyKey);
+    order.setStatus(OrderStatus.PAYMENT_PENDING);
+    orderRepository.save(order);
 
     List<OrderItemRequest> items =
         order.getItems().stream()
@@ -125,13 +158,12 @@ public class PaymentService {
             "installments", dto.installments() != null ? dto.installments() : 1);
       }
 
-      CustomOrderClient orderClient = new CustomOrderClient();
       MPRequestOptions options =
           MPRequestOptions.builder()
-              .customHeaders(Map.of("X-Idempotency-Key", UUID.randomUUID().toString()))
+              .customHeaders(Map.of("X-Idempotency-Key", idempotencyKey))
               .build();
 
-      Order mpOrder = orderClient.createOrder(payload, options);
+      Order mpOrder = customOrderClient.createOrder(payload, options);
 
       order.setPaymentId(mpOrder.getId());
       orderRepository.save(order);
@@ -150,12 +182,16 @@ public class PaymentService {
           paymentMethodResponse != null ? paymentMethodResponse.getDigitableLine() : null);
 
     } catch (MPApiException e) {
+      order.setStatus(OrderStatus.PENDING);
+      orderRepository.save(order);
       log.error(
           "MP API error - status: {}, body: {}",
           e.getApiResponse().getStatusCode(),
           e.getApiResponse().getContent());
       throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
     } catch (MPException e) {
+      order.setStatus(OrderStatus.PENDING);
+      orderRepository.save(order);
       log.error("MP SDK error: {}", e.getMessage());
       throw new RuntimeException("Erro ao criar order de pagamento: " + e.getMessage());
     }
@@ -163,16 +199,14 @@ public class PaymentService {
 
   @Transactional
   public void handleWebhook(String xSignature, String xRequestId, MercadoPagoWebhookDto dto) {
-
     if (!"order".equals(dto.type())) return;
     if (dto.data() == null || dto.data().id() == null) return;
 
     if (!isValidSignature(xSignature, xRequestId, dto.data().id())) {
-      throw new SecurityException("Assinatura do webhook inválida");
+      throw new WebhookSignatureException("Assinatura do webhook inválida ou expirada.");
     }
 
     try {
-      OrderClient orderClient = new OrderClient();
       Order mpOrder = orderClient.get(dto.data().id());
 
       com.orama.e_commerce.models.Order order =
@@ -198,7 +232,7 @@ public class PaymentService {
       orderRepository.save(order);
 
     } catch (MPException | MPApiException e) {
-      throw new RuntimeException("Erro ao processar webhook: " + e.getMessage());
+      throw new WebhookProcessingException("Erro ao processar webhook do Mercado Pago.", e);
     }
   }
 
@@ -265,7 +299,11 @@ public class PaymentService {
   }
 
   private boolean isValidSignature(String xSignature, String xRequestId, String dataId) {
-    if (webhookSecret == null || webhookSecret.isBlank()) return true;
+    if (webhookSecret == null || webhookSecret.isBlank()) {
+      log.warn("Webhook rejeitado: mercadopago.webhook-secret não está configurado.");
+      return false;
+    }
+
     if (xSignature == null || xRequestId == null) return false;
 
     String ts = null;
@@ -277,6 +315,21 @@ public class PaymentService {
     }
 
     if (ts == null || v1 == null) return false;
+
+    try {
+      long notificationTs = Long.parseLong(ts);
+      long nowSeconds = Instant.now().getEpochSecond();
+      long notificationTsSeconds =
+          notificationTs > 9_999_999_999L ? notificationTs / 1000 : notificationTs;
+
+      if (Math.abs(nowSeconds - notificationTsSeconds) > webhookTsTolerance) {
+        log.warn("Webhook rejeitado: timestamp fora da janela de tolerância. ts={}", ts);
+        return false;
+      }
+    } catch (NumberFormatException e) {
+      log.warn("Webhook rejeitado: timestamp inválido. ts={}", ts);
+      return false;
+    }
 
     String template = "id:" + dataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
 

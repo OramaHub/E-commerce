@@ -48,6 +48,12 @@ public class Order {
   @Column(name = "payment_method", length = 50)
   private String paymentMethod;
 
+  @Column(name = "payment_idempotency_key", length = 100, unique = true)
+  private String paymentIdempotencyKey;
+
+  @Column(name = "payment_attempt_counter", nullable = false)
+  private int paymentAttemptCounter = 0;
+
   @OneToMany(
       mappedBy = "order",
       fetch = FetchType.LAZY,
@@ -191,6 +197,22 @@ public class Order {
 
   public void setPaymentMethod(String paymentMethod) {
     this.paymentMethod = paymentMethod;
+  }
+
+  public String getPaymentIdempotencyKey() {
+    return paymentIdempotencyKey;
+  }
+
+  public void setPaymentIdempotencyKey(String paymentIdempotencyKey) {
+    this.paymentIdempotencyKey = paymentIdempotencyKey;
+  }
+
+  public int getPaymentAttemptCounter() {
+    return paymentAttemptCounter;
+  }
+
+  public void setPaymentAttemptCounter(int paymentAttemptCounter) {
+    this.paymentAttemptCounter = paymentAttemptCounter;
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.orama.e_commerce.enums;
 
 public enum OrderStatus {
   PENDING,
+  PAYMENT_PENDING,
   PAYMENT_CONFIRMED,
   PROCESSING,
   SHIPPED,

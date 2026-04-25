@@ -78,20 +78,22 @@ public class OrderService {
     order.setShippingCost(shippingCost);
     order.setZipCode(dto.zipCode());
 
-    Address deliveryAddress =
-        addressRepository
-            .findById(dto.deliveryAddressId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Endereço de entrega não encontrado com id: " + dto.deliveryAddressId()));
+    if (dto.deliveryAddressId() != null) {
+      Address deliveryAddress =
+          addressRepository
+              .findById(dto.deliveryAddressId())
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          "Endereço de entrega não encontrado com id: " + dto.deliveryAddressId()));
 
-    if (!addressRepository.existsByIdAndClientId(
-        dto.deliveryAddressId(), cart.getClient().getId())) {
-      throw new AccessDeniedException("Endereço não pertence ao cliente");
+      if (!addressRepository.existsByIdAndClientId(
+          dto.deliveryAddressId(), cart.getClient().getId())) {
+        throw new AccessDeniedException("Endereço não pertence ao cliente");
+      }
+
+      order.setDeliveryAddress(deliveryAddress);
     }
-
-    order.setDeliveryAddress(deliveryAddress);
     order.setTotal(subtotal.subtract(discount).add(shippingCost));
 
     List<OrderItem> orderItems = createOrderItems(cart.getItems(), order);

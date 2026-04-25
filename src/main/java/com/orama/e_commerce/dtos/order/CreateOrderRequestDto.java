@@ -12,6 +12,4 @@ public record CreateOrderRequestDto(
         Long cartId,
     @PositiveOrZero(message = "Desconto deve ser zero ou positivo") BigDecimal discount,
     @NotBlank(message = "CEP é obrigatório") String zipCode,
-    @NotNull(message = "Endereço de entrega é obrigatório")
-        @Positive(message = "ID do endereço deve ser positivo")
-        Long deliveryAddressId) {}
+    @Positive(message = "ID do endereço deve ser positivo") Long deliveryAddressId) {}

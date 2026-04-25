@@ -55,6 +55,8 @@ admin:
 mercadopago:
   access-token: ${MERCADOPAGO_ACCESS_TOKEN}
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
+  webhook-ts-tolerance: ${MERCADOPAGO_WEBHOOK_TS_TOLERANCE:300}
+  webhook-secret-required: false
 
 cloudflare:
   r2:

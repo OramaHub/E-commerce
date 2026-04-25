@@ -6,6 +6,8 @@ import com.orama.e_commerce.exceptions.auth.InvalidPasswordResetTokenException;
 import com.orama.e_commerce.exceptions.auth.InvalidRefreshTokenException;
 import com.orama.e_commerce.exceptions.client.*;
 import com.orama.e_commerce.exceptions.media.MediaLibraryNotFoundException;
+import com.orama.e_commerce.exceptions.payment.OrderOwnershipException;
+import com.orama.e_commerce.exceptions.payment.PaymentAlreadyInProgressException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyActiveException;
 import com.orama.e_commerce.exceptions.product.ProductAlreadyInactiveException;
 import com.orama.e_commerce.exceptions.product.ProductNotFoundException;
@@ -289,5 +291,23 @@ public class GlobalExceptionHandler {
                 request,
                 HttpStatus.FORBIDDEN,
                 "Acesso negado: você não tem permissão para acessar este recurso"));
+  }
+
+  @ExceptionHandler(OrderOwnershipException.class)
+  public ResponseEntity<ErrorMessage> handleOrderOwnershipException(
+      OrderOwnershipException ex, HttpServletRequest request) {
+    logger.warn("Payment ownership violation: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.FORBIDDEN, ex.getMessage()));
+  }
+
+  @ExceptionHandler(PaymentAlreadyInProgressException.class)
+  public ResponseEntity<ErrorMessage> handlePaymentAlreadyInProgressException(
+      PaymentAlreadyInProgressException ex, HttpServletRequest request) {
+    logger.warn("Payment already in progress: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
   }
 }
