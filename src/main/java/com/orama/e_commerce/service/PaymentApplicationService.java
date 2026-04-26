@@ -367,9 +367,6 @@ public class PaymentApplicationService {
   }
 
   private Address resolveAddress(Order order) {
-    if (order.getDeliveryAddress() != null) {
-      return order.getDeliveryAddress();
-    }
     Client client = order.getClient();
     if (client.getAddresses() != null && !client.getAddresses().isEmpty()) {
       return client.getAddresses().get(0);
@@ -401,24 +398,8 @@ public class PaymentApplicationService {
         jpaAddress.getNumber(),
         sanitizeDigitsOnly(jpaAddress.getZipCode()),
         jpaAddress.getDistrict(),
-        resolveCityName(jpaAddress),
-        resolveStateUf(jpaAddress));
-  }
-
-  private String resolveCityName(Address address) {
-    if (hasText(address.getCityName())) {
-      return address.getCityName();
-    }
-    return address.getCity() != null ? address.getCity().getName() : null;
-  }
-
-  private String resolveStateUf(Address address) {
-    if (hasText(address.getStateUf())) {
-      return address.getStateUf();
-    }
-    return address.getCity() != null && address.getCity().getState() != null
-        ? address.getCity().getState().getAbbreviation()
-        : null;
+        jpaAddress.getCityName(),
+        jpaAddress.getStateUf());
   }
 
   private CreatePaymentCommand.PaymentMethod toPaymentMethod(InitiatePaymentRequestDto dto) {

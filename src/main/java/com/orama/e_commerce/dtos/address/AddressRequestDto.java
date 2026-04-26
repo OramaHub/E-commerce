@@ -17,7 +17,6 @@ public record AddressRequestDto(
     @NotBlank(message = "CEP e obrigatorio")
         @Size(max = 20, message = "CEP deve ter no maximo 20 caracteres")
         String zipCode,
-    Long cityId,
     @Size(max = 150, message = "Cidade deve ter no maximo 150 caracteres") String cityName,
     @Size(max = 10, message = "UF deve ter no maximo 10 caracteres") String stateUf,
     @Size(max = 10, message = "Pais deve ter no maximo 10 caracteres") String countryCode,

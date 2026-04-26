@@ -9,8 +9,6 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
 
   List<Address> findByClientId(Long clientId);
 
-  List<Address> findByCityId(Long cityId);
-
   boolean existsByIdAndClientId(Long id, Long clientId);
 
   Optional<Address> findByClientIdAndDefaultAddressTrue(Long clientId);

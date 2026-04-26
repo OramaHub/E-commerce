@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,7 +19,7 @@ public class Address implements Serializable {
   @Column(nullable = false, length = 255)
   private String street;
 
-  @Column(nullable = true, length = 20)
+  @Column(nullable = false, length = 20)
   private String number;
 
   @Column(nullable = false)
@@ -44,13 +43,13 @@ public class Address implements Serializable {
   @Column(length = 255)
   private String reference;
 
-  @Column(name = "city_name", length = 150)
+  @Column(name = "city_name", nullable = false, length = 150)
   private String cityName;
 
-  @Column(name = "state_uf", length = 10)
+  @Column(name = "state_uf", nullable = false, length = 10)
   private String stateUf;
 
-  @Column(name = "country_code", length = 10)
+  @Column(name = "country_code", nullable = false, length = 10)
   private String countryCode = "BR";
 
   @Column(name = "ibge_code", length = 7)
@@ -74,13 +73,6 @@ public class Address implements Serializable {
   @JoinColumn(name = "client_id", nullable = false)
   private Client client;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "city_id")
-  private City city;
-
-  @OneToMany(mappedBy = "deliveryAddress", fetch = FetchType.LAZY)
-  private List<Order> orders;
-
   public Address() {}
 
   public Address(Long id) {
@@ -101,14 +93,6 @@ public class Address implements Serializable {
 
   public void setClient(Client client) {
     this.client = client;
-  }
-
-  public City getCity() {
-    return city;
-  }
-
-  public void setCity(City city) {
-    this.city = city;
   }
 
   public String getStreet() {
@@ -245,14 +229,6 @@ public class Address implements Serializable {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
-  }
-
-  public List<Order> getOrders() {
-    return orders;
-  }
-
-  public void setOrders(List<Order> orders) {
-    this.orders = orders;
   }
 
   @Override

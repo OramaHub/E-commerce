@@ -73,6 +73,13 @@ class OrderServiceTest {
 
     address = new Address();
     address.setId(1L);
+    address.setStreet("Rua das Flores");
+    address.setNumber("123");
+    address.setDistrict("Centro");
+    address.setZipCode("01310-100");
+    address.setCityName("Sao Paulo");
+    address.setStateUf("SP");
+    address.setCountryCode("BR");
 
     order = new Order();
     order.setId(1L);

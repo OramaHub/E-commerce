@@ -3,7 +3,6 @@ package com.orama.e_commerce.mapper;
 import com.orama.e_commerce.dtos.order.CreateOrderRequestDto;
 import com.orama.e_commerce.dtos.order.OrderItemDto;
 import com.orama.e_commerce.dtos.order.OrderResponseDto;
-import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Order;
 import com.orama.e_commerce.models.OrderItem;
 import com.orama.e_commerce.models.OrderShippingAddress;
@@ -27,7 +26,6 @@ public interface OrderMapper {
   @Mapping(target = "client", ignore = true)
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)
-  @Mapping(target = "deliveryAddress", ignore = true)
   @Mapping(target = "shippingAddress", ignore = true)
   @Mapping(target = "paymentId", ignore = true)
   @Mapping(target = "paymentMethod", ignore = true)
@@ -39,7 +37,6 @@ public interface OrderMapper {
     }
 
     OrderShippingAddress snapshot = order.getShippingAddress();
-    Address address = order.getDeliveryAddress();
 
     return new OrderResponseDto(
         order.getId(),
@@ -58,14 +55,12 @@ public interface OrderMapper {
         order.getItems() != null
             ? order.getItems().stream().map(this::toItemDto).toList()
             : List.of(),
-        snapshot != null
-            ? snapshot.getOriginalAddressId()
-            : address != null ? address.getId() : null,
-        snapshot != null ? snapshot.getStreet() : address != null ? address.getStreet() : null,
-        snapshot != null ? snapshot.getNumber() : address != null ? address.getNumber() : null,
-        snapshot != null ? snapshot.getDistrict() : address != null ? address.getDistrict() : null,
-        snapshot != null ? snapshot.getCityName() : resolveCityName(address),
-        snapshot != null ? snapshot.getStateUf() : resolveStateUf(address));
+        snapshot != null ? snapshot.getOriginalAddressId() : null,
+        snapshot != null ? snapshot.getStreet() : null,
+        snapshot != null ? snapshot.getNumber() : null,
+        snapshot != null ? snapshot.getDistrict() : null,
+        snapshot != null ? snapshot.getCityName() : null,
+        snapshot != null ? snapshot.getStateUf() : null);
   }
 
   @Mapping(target = "productId", source = "product.id")
@@ -75,30 +70,4 @@ public interface OrderMapper {
       expression =
           "java(orderItem.getUnitPrice().multiply(new java.math.BigDecimal(orderItem.getQuantity())))")
   OrderItemDto toItemDto(OrderItem orderItem);
-
-  private String resolveCityName(Address address) {
-    if (address == null) {
-      return null;
-    }
-    if (hasText(address.getCityName())) {
-      return address.getCityName();
-    }
-    return address.getCity() != null ? address.getCity().getName() : null;
-  }
-
-  private String resolveStateUf(Address address) {
-    if (address == null) {
-      return null;
-    }
-    if (hasText(address.getStateUf())) {
-      return address.getStateUf();
-    }
-    return address.getCity() != null && address.getCity().getState() != null
-        ? address.getCity().getState().getAbbreviation()
-        : null;
-  }
-
-  private boolean hasText(String value) {
-    return value != null && !value.isBlank();
-  }
 }

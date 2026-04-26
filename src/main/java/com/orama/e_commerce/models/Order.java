@@ -66,10 +66,6 @@ public class Order {
   @JoinColumn(name = "client_id", nullable = false)
   private Client client;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "delivery_adress_id")
-  private Address deliveryAddress;
-
   @OneToOne(
       mappedBy = "order",
       fetch = FetchType.LAZY,
@@ -153,14 +149,6 @@ public class Order {
 
   public void setClient(Client client) {
     this.client = client;
-  }
-
-  public Address getDeliveryAddress() {
-    return deliveryAddress;
-  }
-
-  public void setDeliveryAddress(Address deliveryAddress) {
-    this.deliveryAddress = deliveryAddress;
   }
 
   public OrderShippingAddress getShippingAddress() {

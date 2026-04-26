@@ -5,6 +5,7 @@ import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.models.Order;
 import com.orama.e_commerce.models.OrderItem;
+import com.orama.e_commerce.models.OrderShippingAddress;
 import com.orama.e_commerce.models.Product;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -17,8 +18,8 @@ public class OrderTestBuilder {
   private OrderStatus status = OrderStatus.PENDING;
   private BigDecimal total = new BigDecimal("100.00");
   private Client client;
-  private Address deliveryAddress;
-  private boolean deliveryAddressExplicitlySet = false;
+  private Address shippingAddressSource;
+  private boolean shippingAddressExplicitlySet = false;
   private List<OrderItem> items = new ArrayList<>();
 
   public static OrderTestBuilder anOrder() {
@@ -51,14 +52,14 @@ public class OrderTestBuilder {
   }
 
   public OrderTestBuilder withDeliveryAddress(Address address) {
-    this.deliveryAddress = address;
-    this.deliveryAddressExplicitlySet = true;
+    this.shippingAddressSource = address;
+    this.shippingAddressExplicitlySet = true;
     return this;
   }
 
   public OrderTestBuilder withoutDeliveryAddress() {
-    this.deliveryAddress = null;
-    this.deliveryAddressExplicitlySet = true;
+    this.shippingAddressSource = null;
+    this.shippingAddressExplicitlySet = true;
     return this;
   }
 
@@ -82,15 +83,19 @@ public class OrderTestBuilder {
     if (items.isEmpty()) {
       withItem("Produto Padrao", new BigDecimal("100.00"), 1);
     }
-    if (!deliveryAddressExplicitlySet) {
-      deliveryAddress = AddressTestBuilder.anAddress().build();
+    if (!shippingAddressExplicitlySet) {
+      shippingAddressSource = AddressTestBuilder.anAddress().build();
     }
     Order order = new Order(id);
     order.setOrderNumber(orderNumber);
     order.setStatus(status);
     order.setTotal(total);
     order.setClient(client);
-    order.setDeliveryAddress(deliveryAddress);
+    if (shippingAddressSource != null) {
+      OrderShippingAddress snapshot =
+          OrderShippingAddress.fromAddress(order, shippingAddressSource);
+      order.setShippingAddress(snapshot);
+    }
     order.setItems(items);
     return order;
   }

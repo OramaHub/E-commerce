@@ -96,7 +96,6 @@ public class OrderService {
         throw new AccessDeniedException("Endereço não pertence ao cliente");
       }
 
-      order.setDeliveryAddress(deliveryAddress);
       order.setShippingAddress(OrderShippingAddress.fromAddress(order, deliveryAddress));
     }
     order.setTotal(subtotal.subtract(discount).add(shippingCost));

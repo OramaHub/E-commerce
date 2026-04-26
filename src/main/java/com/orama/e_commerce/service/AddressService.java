@@ -7,10 +7,8 @@ import com.orama.e_commerce.dtos.location.CepLookupResponseDto;
 import com.orama.e_commerce.exceptions.BadRequestException;
 import com.orama.e_commerce.mapper.AddressMapper;
 import com.orama.e_commerce.models.Address;
-import com.orama.e_commerce.models.City;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.AddressRepository;
-import com.orama.e_commerce.repository.CityRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Locale;
@@ -20,17 +18,14 @@ import org.springframework.stereotype.Service;
 public class AddressService {
 
   private final AddressRepository addressRepository;
-  private final CityRepository cityRepository;
   private final AddressMapper addressMapper;
   private final LocationService locationService;
 
   public AddressService(
       AddressRepository addressRepository,
-      CityRepository cityRepository,
       AddressMapper addressMapper,
       LocationService locationService) {
     this.addressRepository = addressRepository;
-    this.cityRepository = cityRepository;
     this.addressMapper = addressMapper;
     this.locationService = locationService;
   }
@@ -49,7 +44,6 @@ public class AddressService {
 
     applyLocation(
         address,
-        requestDto.cityId(),
         requestDto.zipCode(),
         requestDto.cityName(),
         requestDto.stateUf(),
@@ -84,9 +78,6 @@ public class AddressService {
     addressMapper.updateEntity(requestDto, address);
     applyLocation(
         address,
-        requestDto.cityId() != null
-            ? requestDto.cityId()
-            : address.getCity() != null ? address.getCity().getId() : null,
         address.getZipCode(),
         address.getCityName(),
         address.getStateUf(),
@@ -164,18 +155,8 @@ public class AddressService {
             });
   }
 
-  private City referenceCity(Long cityId) {
-    if (cityId == null || cityId <= 0) {
-      return null;
-    }
-    City city = new City();
-    city.setId(cityId);
-    return city;
-  }
-
   private void applyLocation(
       Address address,
-      Long cityId,
       String zipCode,
       String cityName,
       String stateUf,
@@ -187,19 +168,14 @@ public class AddressService {
 
     LocationData location =
         new LocationData(
-            cityId != null && cityId > 0 ? cityId : null,
             trimToNull(cityName),
             normalizeStateUf(stateUf),
             trimToNull(countryCode),
             trimToNull(ibgeCode));
 
-    if (location.cityId() != null) {
-      location = enrichFromCity(location);
-    }
-
     if (!hasText(location.cityName()) || !hasText(location.stateUf())) {
       location = enrichFromCep(location, zipCode);
-    } else if (location.cityId() == null) {
+    } else if (!hasText(location.ibgeCode())) {
       location = tryEnrichFromCep(location, zipCode);
     }
 
@@ -207,37 +183,10 @@ public class AddressService {
       throw new BadRequestException("Cidade e UF sao obrigatorias para salvar o endereco.");
     }
 
-    address.setCity(referenceCity(location.cityId()));
     address.setCityName(location.cityName());
     address.setStateUf(location.stateUf());
     address.setCountryCode(hasText(location.countryCode()) ? location.countryCode() : "BR");
     address.setIbgeCode(location.ibgeCode());
-  }
-
-  private LocationData enrichFromCity(LocationData location) {
-    return cityRepository
-        .findByIdWithStateAndCountry(location.cityId())
-        .map(
-            city ->
-                new LocationData(
-                    city.getId(),
-                    firstText(location.cityName(), city.getName()),
-                    firstText(
-                        location.stateUf(),
-                        city.getState() != null ? city.getState().getAbbreviation() : null),
-                    firstText(
-                        location.countryCode(),
-                        city.getState() != null && city.getState().getCountry() != null
-                            ? city.getState().getCountry().getAbbreviation()
-                            : null),
-                    firstText(location.ibgeCode(), city.getIbgeCode())))
-        .orElse(
-            new LocationData(
-                null,
-                location.cityName(),
-                location.stateUf(),
-                location.countryCode(),
-                location.ibgeCode()));
   }
 
   private LocationData enrichFromCep(LocationData location, String zipCode) {
@@ -246,9 +195,8 @@ public class AddressService {
       return location;
     }
     return new LocationData(
-        firstLong(location.cityId(), lookupResponse.cityId()),
-        firstText(location.cityName(), lookupResponse.cityName(), lookupResponse.city()),
-        firstText(location.stateUf(), lookupResponse.stateUf(), lookupResponse.state()),
+        firstText(location.cityName(), lookupResponse.cityName()),
+        firstText(location.stateUf(), lookupResponse.stateUf()),
         firstText(location.countryCode(), lookupResponse.countryCode(), "BR"),
         firstText(location.ibgeCode(), lookupResponse.ibgeCode()));
   }
@@ -259,10 +207,6 @@ public class AddressService {
     } catch (BadRequestException exception) {
       return location;
     }
-  }
-
-  private Long firstLong(Long first, Long second) {
-    return first != null && first > 0 ? first : second;
   }
 
   private String firstText(String... values) {
@@ -288,5 +232,5 @@ public class AddressService {
   }
 
   private record LocationData(
-      Long cityId, String cityName, String stateUf, String countryCode, String ibgeCode) {}
+      String cityName, String stateUf, String countryCode, String ibgeCode) {}
 }

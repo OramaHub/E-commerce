@@ -1,8 +1,6 @@
 package com.orama.e_commerce.testdata;
 
 import com.orama.e_commerce.models.Address;
-import com.orama.e_commerce.models.City;
-import com.orama.e_commerce.models.State;
 
 public class AddressTestBuilder {
 
@@ -54,14 +52,6 @@ public class AddressTestBuilder {
   }
 
   public Address build() {
-    State state = new State();
-    state.setAbbreviation(stateAbbreviation);
-    state.setName(stateAbbreviation);
-
-    City city = new City();
-    city.setName(cityName);
-    city.setState(state);
-
     Address address = new Address(id);
     address.setStreet(street);
     address.setNumber(number);
@@ -70,7 +60,6 @@ public class AddressTestBuilder {
     address.setCityName(cityName);
     address.setStateUf(stateAbbreviation);
     address.setCountryCode("BR");
-    address.setCity(city);
     return address;
   }
 }

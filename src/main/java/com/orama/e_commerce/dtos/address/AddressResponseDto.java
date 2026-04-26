@@ -10,7 +10,6 @@ public record AddressResponseDto(
     String district,
     String zipCode,
     Boolean defaultAddress,
-    Long cityId,
     String cityName,
     String stateUf,
     String countryCode,

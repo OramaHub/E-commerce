@@ -78,30 +78,14 @@ public class OrderShippingAddress {
     snapshot.setComplement(address.getComplement());
     snapshot.setDistrict(address.getDistrict());
     snapshot.setReference(address.getReference());
-    snapshot.setCityName(resolveCityName(address));
-    snapshot.setStateUf(resolveStateUf(address));
+    snapshot.setCityName(address.getCityName());
+    snapshot.setStateUf(address.getStateUf());
     snapshot.setCountryCode(hasText(address.getCountryCode()) ? address.getCountryCode() : "BR");
     snapshot.setIbgeCode(address.getIbgeCode());
     snapshot.setLatitude(address.getLatitude());
     snapshot.setLongitude(address.getLongitude());
     snapshot.setOriginalAddressId(address.getId());
     return snapshot;
-  }
-
-  private static String resolveCityName(Address address) {
-    if (hasText(address.getCityName())) {
-      return address.getCityName();
-    }
-    return address.getCity() != null ? address.getCity().getName() : null;
-  }
-
-  private static String resolveStateUf(Address address) {
-    if (hasText(address.getStateUf())) {
-      return address.getStateUf();
-    }
-    return address.getCity() != null && address.getCity().getState() != null
-        ? address.getCity().getState().getAbbreviation()
-        : null;
   }
 
   private static boolean hasText(String value) {
