@@ -1,4 +1,13 @@
 package com.orama.e_commerce.dtos.location;
 
 public record CepLookupResponseDto(
-    String zipCode, String street, String district, String city, String state, Long cityId) {}
+    String zipCode,
+    String street,
+    String district,
+    String city,
+    String state,
+    Long cityId,
+    String cityName,
+    String stateUf,
+    String countryCode,
+    String ibgeCode) {}

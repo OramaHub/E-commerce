@@ -10,22 +10,27 @@ import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.City;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.AddressRepository;
+import com.orama.e_commerce.repository.CityRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AddressService {
 
   private final AddressRepository addressRepository;
+  private final CityRepository cityRepository;
   private final AddressMapper addressMapper;
   private final LocationService locationService;
 
   public AddressService(
       AddressRepository addressRepository,
+      CityRepository cityRepository,
       AddressMapper addressMapper,
       LocationService locationService) {
     this.addressRepository = addressRepository;
+    this.cityRepository = cityRepository;
     this.addressMapper = addressMapper;
     this.locationService = locationService;
   }
@@ -42,7 +47,14 @@ public class AddressService {
     client.setId(clientId);
     address.setClient(client);
 
-    address.setCity(referenceCity(resolveCityId(requestDto.cityId(), requestDto.zipCode())));
+    applyLocation(
+        address,
+        requestDto.cityId(),
+        requestDto.zipCode(),
+        requestDto.cityName(),
+        requestDto.stateUf(),
+        requestDto.countryCode(),
+        requestDto.ibgeCode());
 
     if (Boolean.TRUE.equals(requestDto.defaultAddress())) {
       unsetDefaultAddress(clientId);
@@ -69,11 +81,17 @@ public class AddressService {
       unsetDefaultAddress(clientId);
     }
 
-    if (requestDto.cityId() != null || hasText(requestDto.zipCode())) {
-      address.setCity(referenceCity(resolveCityId(requestDto.cityId(), requestDto.zipCode())));
-    }
-
     addressMapper.updateEntity(requestDto, address);
+    applyLocation(
+        address,
+        requestDto.cityId() != null
+            ? requestDto.cityId()
+            : address.getCity() != null ? address.getCity().getId() : null,
+        address.getZipCode(),
+        address.getCityName(),
+        address.getStateUf(),
+        address.getCountryCode(),
+        address.getIbgeCode());
 
     Address updated = addressRepository.save(address);
 
@@ -147,29 +165,128 @@ public class AddressService {
   }
 
   private City referenceCity(Long cityId) {
+    if (cityId == null || cityId <= 0) {
+      return null;
+    }
     City city = new City();
     city.setId(cityId);
     return city;
   }
 
-  private Long resolveCityId(Long cityId, String zipCode) {
-    if (cityId != null && cityId > 0) {
-      return cityId;
-    }
-
+  private void applyLocation(
+      Address address,
+      Long cityId,
+      String zipCode,
+      String cityName,
+      String stateUf,
+      String countryCode,
+      String ibgeCode) {
     if (!hasText(zipCode)) {
       throw new BadRequestException("CEP e obrigatorio para identificar a cidade.");
     }
 
-    CepLookupResponseDto lookupResponse = locationService.lookupCep(zipCode);
-    if (lookupResponse == null || lookupResponse.cityId() == null) {
-      throw new BadRequestException("Nao foi possivel identificar a cidade pelo CEP informado.");
+    LocationData location =
+        new LocationData(
+            cityId != null && cityId > 0 ? cityId : null,
+            trimToNull(cityName),
+            normalizeStateUf(stateUf),
+            trimToNull(countryCode),
+            trimToNull(ibgeCode));
+
+    if (location.cityId() != null) {
+      location = enrichFromCity(location);
     }
 
-    return lookupResponse.cityId();
+    if (!hasText(location.cityName()) || !hasText(location.stateUf())) {
+      location = enrichFromCep(location, zipCode);
+    } else if (location.cityId() == null) {
+      location = tryEnrichFromCep(location, zipCode);
+    }
+
+    if (!hasText(location.cityName()) || !hasText(location.stateUf())) {
+      throw new BadRequestException("Cidade e UF sao obrigatorias para salvar o endereco.");
+    }
+
+    address.setCity(referenceCity(location.cityId()));
+    address.setCityName(location.cityName());
+    address.setStateUf(location.stateUf());
+    address.setCountryCode(hasText(location.countryCode()) ? location.countryCode() : "BR");
+    address.setIbgeCode(location.ibgeCode());
+  }
+
+  private LocationData enrichFromCity(LocationData location) {
+    return cityRepository
+        .findByIdWithStateAndCountry(location.cityId())
+        .map(
+            city ->
+                new LocationData(
+                    city.getId(),
+                    firstText(location.cityName(), city.getName()),
+                    firstText(
+                        location.stateUf(),
+                        city.getState() != null ? city.getState().getAbbreviation() : null),
+                    firstText(
+                        location.countryCode(),
+                        city.getState() != null && city.getState().getCountry() != null
+                            ? city.getState().getCountry().getAbbreviation()
+                            : null),
+                    firstText(location.ibgeCode(), city.getIbgeCode())))
+        .orElse(
+            new LocationData(
+                null,
+                location.cityName(),
+                location.stateUf(),
+                location.countryCode(),
+                location.ibgeCode()));
+  }
+
+  private LocationData enrichFromCep(LocationData location, String zipCode) {
+    CepLookupResponseDto lookupResponse = locationService.lookupCep(zipCode);
+    if (lookupResponse == null) {
+      return location;
+    }
+    return new LocationData(
+        firstLong(location.cityId(), lookupResponse.cityId()),
+        firstText(location.cityName(), lookupResponse.cityName(), lookupResponse.city()),
+        firstText(location.stateUf(), lookupResponse.stateUf(), lookupResponse.state()),
+        firstText(location.countryCode(), lookupResponse.countryCode(), "BR"),
+        firstText(location.ibgeCode(), lookupResponse.ibgeCode()));
+  }
+
+  private LocationData tryEnrichFromCep(LocationData location, String zipCode) {
+    try {
+      return enrichFromCep(location, zipCode);
+    } catch (BadRequestException exception) {
+      return location;
+    }
+  }
+
+  private Long firstLong(Long first, Long second) {
+    return first != null && first > 0 ? first : second;
+  }
+
+  private String firstText(String... values) {
+    for (String value : values) {
+      if (hasText(value)) {
+        return value.trim();
+      }
+    }
+    return null;
+  }
+
+  private String normalizeStateUf(String stateUf) {
+    String value = trimToNull(stateUf);
+    return value != null ? value.toUpperCase(Locale.ROOT) : null;
+  }
+
+  private String trimToNull(String value) {
+    return hasText(value) ? value.trim() : null;
   }
 
   private boolean hasText(String value) {
     return value != null && !value.isBlank();
   }
+
+  private record LocationData(
+      Long cityId, String cityName, String stateUf, String countryCode, String ibgeCode) {}
 }

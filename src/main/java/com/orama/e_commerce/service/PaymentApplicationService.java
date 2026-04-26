@@ -16,6 +16,7 @@ import com.orama.e_commerce.exceptions.payment.WebhookSignatureException;
 import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.models.Order;
+import com.orama.e_commerce.models.OrderShippingAddress;
 import com.orama.e_commerce.models.PaymentAttempt;
 import com.orama.e_commerce.repository.OrderRepository;
 import com.orama.e_commerce.repository.PaymentAttemptRepository;
@@ -333,7 +334,7 @@ public class PaymentApplicationService {
   private CreatePaymentCommand buildCommand(
       Order order, InitiatePaymentRequestDto dto, String idempotencyKey) {
 
-    Address address = resolveAddress(order);
+    CreatePaymentCommand.Address address = resolveCommandAddress(order);
 
     Client client = order.getClient();
     String[] nameParts = splitName(client.getName());
@@ -345,7 +346,7 @@ public class PaymentApplicationService {
             nameParts[1],
             DOCUMENT_TYPE_CPF,
             sanitizeDigitsOnly(client.getCpf()),
-            address != null ? toCommandAddress(address) : null);
+            address);
 
     List<CreatePaymentCommand.Item> items =
         order.getItems().stream()
@@ -376,14 +377,48 @@ public class PaymentApplicationService {
     return null;
   }
 
+  private CreatePaymentCommand.Address resolveCommandAddress(Order order) {
+    if (order.getShippingAddress() != null) {
+      return toCommandAddress(order.getShippingAddress());
+    }
+    Address address = resolveAddress(order);
+    return address != null ? toCommandAddress(address) : null;
+  }
+
+  private CreatePaymentCommand.Address toCommandAddress(OrderShippingAddress snapshot) {
+    return new CreatePaymentCommand.Address(
+        snapshot.getStreet(),
+        snapshot.getNumber(),
+        sanitizeDigitsOnly(snapshot.getZipCode()),
+        snapshot.getDistrict(),
+        snapshot.getCityName(),
+        snapshot.getStateUf());
+  }
+
   private CreatePaymentCommand.Address toCommandAddress(Address jpaAddress) {
     return new CreatePaymentCommand.Address(
         jpaAddress.getStreet(),
         jpaAddress.getNumber(),
         sanitizeDigitsOnly(jpaAddress.getZipCode()),
         jpaAddress.getDistrict(),
-        jpaAddress.getCity().getName(),
-        jpaAddress.getCity().getState().getAbbreviation());
+        resolveCityName(jpaAddress),
+        resolveStateUf(jpaAddress));
+  }
+
+  private String resolveCityName(Address address) {
+    if (hasText(address.getCityName())) {
+      return address.getCityName();
+    }
+    return address.getCity() != null ? address.getCity().getName() : null;
+  }
+
+  private String resolveStateUf(Address address) {
+    if (hasText(address.getStateUf())) {
+      return address.getStateUf();
+    }
+    return address.getCity() != null && address.getCity().getState() != null
+        ? address.getCity().getState().getAbbreviation()
+        : null;
   }
 
   private CreatePaymentCommand.PaymentMethod toPaymentMethod(InitiatePaymentRequestDto dto) {
@@ -408,6 +443,10 @@ public class PaymentApplicationService {
 
   private String sanitizeDigitsOnly(String value) {
     return value != null ? value.replaceAll("\\D", "") : "";
+  }
+
+  private boolean hasText(String value) {
+    return value != null && !value.isBlank();
   }
 
   private String sanitizeExternalReference(String orderNumber) {

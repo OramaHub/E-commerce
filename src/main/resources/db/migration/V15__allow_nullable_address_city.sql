@@ -1,0 +1,1 @@
+ALTER TABLE tb_address ALTER COLUMN city_id DROP NOT NULL;

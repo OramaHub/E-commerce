@@ -3,8 +3,11 @@ package com.orama.e_commerce.mapper;
 import com.orama.e_commerce.dtos.order.CreateOrderRequestDto;
 import com.orama.e_commerce.dtos.order.OrderItemDto;
 import com.orama.e_commerce.dtos.order.OrderResponseDto;
+import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Order;
 import com.orama.e_commerce.models.OrderItem;
+import com.orama.e_commerce.models.OrderShippingAddress;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -25,19 +28,45 @@ public interface OrderMapper {
   @Mapping(target = "cart", ignore = true)
   @Mapping(target = "items", ignore = true)
   @Mapping(target = "deliveryAddress", ignore = true)
+  @Mapping(target = "shippingAddress", ignore = true)
   @Mapping(target = "paymentId", ignore = true)
   @Mapping(target = "paymentMethod", ignore = true)
   Order toEntity(CreateOrderRequestDto dto);
 
-  @Mapping(target = "clientId", source = "client.id")
-  @Mapping(target = "clientName", source = "client.name")
-  @Mapping(target = "deliveryAddressId", source = "deliveryAddress.id")
-  @Mapping(target = "deliveryStreet", source = "deliveryAddress.street")
-  @Mapping(target = "deliveryNumber", source = "deliveryAddress.number")
-  @Mapping(target = "deliveryDistrict", source = "deliveryAddress.district")
-  @Mapping(target = "deliveryCity", source = "deliveryAddress.city.name")
-  @Mapping(target = "deliveryState", source = "deliveryAddress.city.state.abbreviation")
-  OrderResponseDto toResponseDto(Order order);
+  default OrderResponseDto toResponseDto(Order order) {
+    if (order == null) {
+      return null;
+    }
+
+    OrderShippingAddress snapshot = order.getShippingAddress();
+    Address address = order.getDeliveryAddress();
+
+    return new OrderResponseDto(
+        order.getId(),
+        order.getOrderNumber(),
+        order.getOrderDate(),
+        order.getStatus(),
+        order.getSubtotal(),
+        order.getDiscount(),
+        order.getShippingCost(),
+        order.getTotal(),
+        order.getZipCode(),
+        order.getClient() != null ? order.getClient().getId() : null,
+        order.getClient() != null ? order.getClient().getName() : null,
+        order.getPaymentId(),
+        order.getPaymentMethod(),
+        order.getItems() != null
+            ? order.getItems().stream().map(this::toItemDto).toList()
+            : List.of(),
+        snapshot != null
+            ? snapshot.getOriginalAddressId()
+            : address != null ? address.getId() : null,
+        snapshot != null ? snapshot.getStreet() : address != null ? address.getStreet() : null,
+        snapshot != null ? snapshot.getNumber() : address != null ? address.getNumber() : null,
+        snapshot != null ? snapshot.getDistrict() : address != null ? address.getDistrict() : null,
+        snapshot != null ? snapshot.getCityName() : resolveCityName(address),
+        snapshot != null ? snapshot.getStateUf() : resolveStateUf(address));
+  }
 
   @Mapping(target = "productId", source = "product.id")
   @Mapping(target = "productName", source = "product.name")
@@ -46,4 +75,30 @@ public interface OrderMapper {
       expression =
           "java(orderItem.getUnitPrice().multiply(new java.math.BigDecimal(orderItem.getQuantity())))")
   OrderItemDto toItemDto(OrderItem orderItem);
+
+  private String resolveCityName(Address address) {
+    if (address == null) {
+      return null;
+    }
+    if (hasText(address.getCityName())) {
+      return address.getCityName();
+    }
+    return address.getCity() != null ? address.getCity().getName() : null;
+  }
+
+  private String resolveStateUf(Address address) {
+    if (address == null) {
+      return null;
+    }
+    if (hasText(address.getStateUf())) {
+      return address.getStateUf();
+    }
+    return address.getCity() != null && address.getCity().getState() != null
+        ? address.getCity().getState().getAbbreviation()
+        : null;
+  }
+
+  private boolean hasText(String value) {
+    return value != null && !value.isBlank();
+  }
 }

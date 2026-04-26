@@ -12,6 +12,7 @@ import com.orama.e_commerce.models.Cart;
 import com.orama.e_commerce.models.CartItem;
 import com.orama.e_commerce.models.Order;
 import com.orama.e_commerce.models.OrderItem;
+import com.orama.e_commerce.models.OrderShippingAddress;
 import com.orama.e_commerce.repository.AddressRepository;
 import com.orama.e_commerce.repository.CartRepository;
 import com.orama.e_commerce.repository.OrderRepository;
@@ -96,6 +97,7 @@ public class OrderService {
       }
 
       order.setDeliveryAddress(deliveryAddress);
+      order.setShippingAddress(OrderShippingAddress.fromAddress(order, deliveryAddress));
     }
     order.setTotal(subtotal.subtract(discount).add(shippingCost));
 

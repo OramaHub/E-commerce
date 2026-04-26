@@ -70,6 +70,13 @@ public class Order {
   @JoinColumn(name = "delivery_adress_id")
   private Address deliveryAddress;
 
+  @OneToOne(
+      mappedBy = "order",
+      fetch = FetchType.LAZY,
+      cascade = CascadeType.ALL,
+      orphanRemoval = true)
+  private OrderShippingAddress shippingAddress;
+
   public Order() {}
 
   public Order(Long id) {
@@ -154,6 +161,17 @@ public class Order {
 
   public void setDeliveryAddress(Address deliveryAddress) {
     this.deliveryAddress = deliveryAddress;
+  }
+
+  public OrderShippingAddress getShippingAddress() {
+    return shippingAddress;
+  }
+
+  public void setShippingAddress(OrderShippingAddress shippingAddress) {
+    this.shippingAddress = shippingAddress;
+    if (shippingAddress != null) {
+      shippingAddress.setOrder(this);
+    }
   }
 
   public BigDecimal getShippingCost() {

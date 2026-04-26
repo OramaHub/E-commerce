@@ -67,6 +67,9 @@ public class AddressTestBuilder {
     address.setNumber(number);
     address.setDistrict(district);
     address.setZipCode(zipCode);
+    address.setCityName(cityName);
+    address.setStateUf(stateAbbreviation);
+    address.setCountryCode("BR");
     address.setCity(city);
     return address;
   }

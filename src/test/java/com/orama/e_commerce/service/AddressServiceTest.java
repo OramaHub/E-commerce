@@ -14,6 +14,7 @@ import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.City;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.repository.AddressRepository;
+import com.orama.e_commerce.repository.CityRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class AddressServiceTest {
 
   @Mock private AddressRepository addressRepository;
+  @Mock private CityRepository cityRepository;
   @Mock private AddressMapper addressMapper;
   @Mock private LocationService locationService;
 
@@ -57,6 +59,10 @@ class AddressServiceTest {
     address.setZipCode("01234-567");
     address.setClient(client);
     address.setCity(city);
+    address.setCityName("Sao Paulo");
+    address.setStateUf("SP");
+    address.setCountryCode("BR");
+    address.setIbgeCode("3550308");
     address.setDefaultAddress(false);
 
     addressResponseDto =
@@ -70,6 +76,9 @@ class AddressServiceTest {
             false,
             1L,
             "São Paulo",
+            "SP",
+            "BR",
+            "3550308",
             1L,
             Instant.now(),
             Instant.now());
@@ -77,8 +86,7 @@ class AddressServiceTest {
 
   @Test
   void shouldCreateAddress() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 1L, false);
+    AddressRequestDto requestDto = request(1L, false);
 
     when(addressMapper.toEntity(requestDto)).thenReturn(address);
     when(addressRepository.save(any(Address.class))).thenReturn(address);
@@ -93,15 +101,10 @@ class AddressServiceTest {
 
   @Test
   void shouldCreateAddressResolvingCityIdFromZipCodeWhenCityIdIsMissing() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto(
-            "Rua das Flores", "123", "Apt 45", "Centro", "01234-567", null, false);
+    AddressRequestDto requestDto = request(null, false);
 
     when(addressMapper.toEntity(requestDto)).thenReturn(address);
-    when(locationService.lookupCep("01234-567"))
-        .thenReturn(
-            new CepLookupResponseDto(
-                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", 2L));
+    when(locationService.lookupCep("01234-567")).thenReturn(lookup(2L, "Sao Paulo", "SP"));
     when(addressRepository.save(any(Address.class))).thenReturn(address);
     when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
 
@@ -114,14 +117,10 @@ class AddressServiceTest {
 
   @Test
   void shouldCreateAddressResolvingCityIdFromZipCodeWhenCityIdIsZero() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 0L, false);
+    AddressRequestDto requestDto = request(0L, false);
 
     when(addressMapper.toEntity(requestDto)).thenReturn(address);
-    when(locationService.lookupCep("01234-567"))
-        .thenReturn(
-            new CepLookupResponseDto(
-                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", 2L));
+    when(locationService.lookupCep("01234-567")).thenReturn(lookup(2L, "Sao Paulo", "SP"));
     when(addressRepository.save(any(Address.class))).thenReturn(address);
     when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
 
@@ -133,25 +132,45 @@ class AddressServiceTest {
   }
 
   @Test
-  void shouldThrowBadRequestWhenCityIdCannotBeResolvedFromZipCode() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto(
-            "Rua das Flores", "123", "Apt 45", "Centro", "01234-567", null, false);
+  void shouldCreateAddressWhenCityIdCannotBeResolvedButCepHasTextualCity() {
+    AddressRequestDto requestDto = request(null, false);
+
+    when(addressMapper.toEntity(requestDto)).thenReturn(address);
+    when(locationService.lookupCep("01234-567")).thenReturn(lookup(null, "Sao Paulo", "SP"));
+    when(addressRepository.save(any(Address.class))).thenReturn(address);
+    when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
+
+    AddressResponseDto result = addressService.createAddress(requestDto, 1L);
+
+    assertNotNull(result);
+    assertNull(address.getCity());
+    assertEquals("Sao Paulo", address.getCityName());
+    assertEquals("SP", address.getStateUf());
+    verify(addressRepository).save(address);
+  }
+
+  @Test
+  void shouldCreateAddressWithTextualCityWhenCepLookupFails() {
+    AddressRequestDto requestDto = request(null, false);
 
     when(addressMapper.toEntity(requestDto)).thenReturn(address);
     when(locationService.lookupCep("01234-567"))
-        .thenReturn(
-            new CepLookupResponseDto(
-                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", null));
+        .thenThrow(new BadRequestException("Nao foi possivel identificar a cidade pelo CEP."));
+    when(addressRepository.save(any(Address.class))).thenReturn(address);
+    when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
 
-    assertThrows(BadRequestException.class, () -> addressService.createAddress(requestDto, 1L));
-    verify(addressRepository, never()).save(any(Address.class));
+    AddressResponseDto result = addressService.createAddress(requestDto, 1L);
+
+    assertNotNull(result);
+    assertNull(address.getCity());
+    assertEquals("Sao Paulo", address.getCityName());
+    assertEquals("SP", address.getStateUf());
+    verify(addressRepository).save(address);
   }
 
   @Test
   void shouldCreateAddressAsDefault() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 1L, true);
+    AddressRequestDto requestDto = request(1L, true);
 
     Address existingDefault = new Address();
     existingDefault.setId(2L);
@@ -172,8 +191,7 @@ class AddressServiceTest {
 
   @Test
   void shouldCreateAddressWithDefaultFalseWhenNull() {
-    AddressRequestDto requestDto =
-        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 1L, null);
+    AddressRequestDto requestDto = request(1L, null);
 
     when(addressMapper.toEntity(requestDto)).thenReturn(address);
     when(addressRepository.save(any(Address.class))).thenReturn(address);
@@ -188,9 +206,7 @@ class AddressServiceTest {
 
   @Test
   void shouldUpdateAddress() {
-    AddressUpdateRequestDto updateRequestDto =
-        new AddressUpdateRequestDto(
-            "Rua Nova", "456", "Casa", "Bairro Novo", "98765-432", 2L, false);
+    AddressUpdateRequestDto updateRequestDto = update(2L, false);
 
     when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
     when(addressRepository.save(any(Address.class))).thenReturn(address);
@@ -205,9 +221,7 @@ class AddressServiceTest {
 
   @Test
   void shouldUpdateAddressAsDefault() {
-    AddressUpdateRequestDto updateRequestDto =
-        new AddressUpdateRequestDto(
-            "Rua Nova", "456", "Casa", "Bairro Novo", "98765-432", null, true);
+    AddressUpdateRequestDto updateRequestDto = update(null, true);
 
     Address existingDefault = new Address();
     existingDefault.setId(2L);
@@ -217,10 +231,6 @@ class AddressServiceTest {
     when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
     when(addressRepository.findByClientIdAndDefaultAddressTrue(1L))
         .thenReturn(Optional.of(existingDefault));
-    when(locationService.lookupCep("98765-432"))
-        .thenReturn(
-            new CepLookupResponseDto(
-                "98765-432", "Rua Nova", "Bairro Novo", "Sao Paulo", "SP", 2L));
     when(addressRepository.save(any(Address.class))).thenReturn(address);
     when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
 
@@ -232,9 +242,7 @@ class AddressServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingAddressOfAnotherClient() {
-    AddressUpdateRequestDto updateRequestDto =
-        new AddressUpdateRequestDto(
-            "Rua Nova", "456", "Casa", "Bairro Novo", "98765-432", null, false);
+    AddressUpdateRequestDto updateRequestDto = update(null, false);
 
     when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
 
@@ -244,9 +252,7 @@ class AddressServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingNonExistentAddress() {
-    AddressUpdateRequestDto updateRequestDto =
-        new AddressUpdateRequestDto(
-            "Rua Nova", "456", "Casa", "Bairro Novo", "98765-432", null, false);
+    AddressUpdateRequestDto updateRequestDto = update(null, false);
 
     when(addressRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -365,5 +371,49 @@ class AddressServiceTest {
     when(addressRepository.findById(99L)).thenReturn(Optional.empty());
 
     assertThrows(RuntimeException.class, () -> addressService.setDefaultAddress(99L, 1L));
+  }
+
+  private AddressRequestDto request(Long cityId, Boolean defaultAddress) {
+    return new AddressRequestDto(
+        "Rua das Flores",
+        "123",
+        "Apt 45",
+        "Centro",
+        "01234-567",
+        cityId,
+        "Sao Paulo",
+        "SP",
+        "BR",
+        "3550308",
+        defaultAddress);
+  }
+
+  private AddressUpdateRequestDto update(Long cityId, Boolean defaultAddress) {
+    return new AddressUpdateRequestDto(
+        "Rua Nova",
+        "456",
+        "Casa",
+        "Bairro Novo",
+        "98765-432",
+        cityId,
+        "Sao Paulo",
+        "SP",
+        "BR",
+        "3550308",
+        defaultAddress);
+  }
+
+  private CepLookupResponseDto lookup(Long cityId, String cityName, String stateUf) {
+    return new CepLookupResponseDto(
+        "01234-567",
+        "Rua das Flores",
+        "Centro",
+        cityName,
+        stateUf,
+        cityId,
+        cityName,
+        stateUf,
+        "BR",
+        "3550308");
   }
 }

@@ -12,6 +12,9 @@ public record AddressResponseDto(
     Boolean defaultAddress,
     Long cityId,
     String cityName,
+    String stateUf,
+    String countryCode,
+    String ibgeCode,
     Long clientId,
     Instant createdAt,
     Instant updatedAt) {}

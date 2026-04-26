@@ -2,6 +2,7 @@ package com.orama.e_commerce.models;
 
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,33 @@ public class Address implements Serializable {
   @Column(name = "zip_code", nullable = false, length = 20)
   private String zipCode;
 
+  @Column(name = "recipient_name", length = 120)
+  private String recipientName;
+
+  @Column(name = "recipient_phone", length = 20)
+  private String recipientPhone;
+
+  @Column(length = 255)
+  private String reference;
+
+  @Column(name = "city_name", length = 150)
+  private String cityName;
+
+  @Column(name = "state_uf", length = 10)
+  private String stateUf;
+
+  @Column(name = "country_code", length = 10)
+  private String countryCode = "BR";
+
+  @Column(name = "ibge_code", length = 7)
+  private String ibgeCode;
+
+  @Column(precision = 10, scale = 7)
+  private BigDecimal latitude;
+
+  @Column(precision = 10, scale = 7)
+  private BigDecimal longitude;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -47,7 +75,7 @@ public class Address implements Serializable {
   private Client client;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "city_id", nullable = false)
+  @JoinColumn(name = "city_id")
   private City city;
 
   @OneToMany(mappedBy = "deliveryAddress", fetch = FetchType.LAZY)
@@ -129,6 +157,78 @@ public class Address implements Serializable {
 
   public void setZipCode(String zipCode) {
     this.zipCode = zipCode;
+  }
+
+  public String getRecipientName() {
+    return recipientName;
+  }
+
+  public void setRecipientName(String recipientName) {
+    this.recipientName = recipientName;
+  }
+
+  public String getRecipientPhone() {
+    return recipientPhone;
+  }
+
+  public void setRecipientPhone(String recipientPhone) {
+    this.recipientPhone = recipientPhone;
+  }
+
+  public String getReference() {
+    return reference;
+  }
+
+  public void setReference(String reference) {
+    this.reference = reference;
+  }
+
+  public String getCityName() {
+    return cityName;
+  }
+
+  public void setCityName(String cityName) {
+    this.cityName = cityName;
+  }
+
+  public String getStateUf() {
+    return stateUf;
+  }
+
+  public void setStateUf(String stateUf) {
+    this.stateUf = stateUf;
+  }
+
+  public String getCountryCode() {
+    return countryCode;
+  }
+
+  public void setCountryCode(String countryCode) {
+    this.countryCode = countryCode;
+  }
+
+  public String getIbgeCode() {
+    return ibgeCode;
+  }
+
+  public void setIbgeCode(String ibgeCode) {
+    this.ibgeCode = ibgeCode;
+  }
+
+  public BigDecimal getLatitude() {
+    return latitude;
+  }
+
+  public void setLatitude(BigDecimal latitude) {
+    this.latitude = latitude;
+  }
+
+  public BigDecimal getLongitude() {
+    return longitude;
+  }
+
+  public void setLongitude(BigDecimal longitude) {
+    this.longitude = longitude;
   }
 
   public Instant getCreatedAt() {

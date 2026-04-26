@@ -46,6 +46,9 @@ class AddressControllerTest {
             false,
             1L,
             "Sao Paulo",
+            "SP",
+            "BR",
+            "3550308",
             1L,
             Instant.parse("2026-01-01T00:00:00Z"),
             Instant.parse("2026-01-01T00:00:00Z"));
@@ -72,7 +75,18 @@ class AddressControllerTest {
         .thenReturn(addressResponseDto);
 
     AddressRequestDto requestDto =
-        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 1L, false);
+        new AddressRequestDto(
+            "Rua das Flores",
+            "123",
+            "Apt 45",
+            "Centro",
+            "01234-567",
+            1L,
+            "Sao Paulo",
+            "SP",
+            "BR",
+            "3550308",
+            false);
 
     ResponseEntity<AddressResponseDto> response =
         addressController.createAddress(requestDto, authentication);
@@ -91,7 +105,17 @@ class AddressControllerTest {
 
     AddressUpdateRequestDto requestDto =
         new AddressUpdateRequestDto(
-            "Rua Nova", "456", "Casa", "Bairro Novo", "98765-432", 2L, false);
+            "Rua Nova",
+            "456",
+            "Casa",
+            "Bairro Novo",
+            "98765-432",
+            2L,
+            "Sao Paulo",
+            "SP",
+            "BR",
+            "3550308",
+            false);
 
     ResponseEntity<AddressResponseDto> response =
         addressController.updateAddress(1L, requestDto, authentication);

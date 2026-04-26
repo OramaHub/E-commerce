@@ -129,7 +129,8 @@ public class LocationService {
             ? cityRepository.findByIbgeCode(ibgeCode).map(City::getId).orElse(null)
             : null;
 
-    return new CepLookupResponseDto(formattedZip, street, district, cityName, state, cityId);
+    return new CepLookupResponseDto(
+        formattedZip, street, district, cityName, state, cityId, cityName, state, "BR", ibgeCode);
   }
 
   @SuppressWarnings("unchecked")
