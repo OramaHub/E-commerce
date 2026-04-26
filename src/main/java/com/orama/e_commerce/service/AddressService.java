@@ -3,6 +3,8 @@ package com.orama.e_commerce.service;
 import com.orama.e_commerce.dtos.address.AddressRequestDto;
 import com.orama.e_commerce.dtos.address.AddressResponseDto;
 import com.orama.e_commerce.dtos.address.AddressUpdateRequestDto;
+import com.orama.e_commerce.dtos.location.CepLookupResponseDto;
+import com.orama.e_commerce.exceptions.BadRequestException;
 import com.orama.e_commerce.mapper.AddressMapper;
 import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.City;
@@ -17,10 +19,15 @@ public class AddressService {
 
   private final AddressRepository addressRepository;
   private final AddressMapper addressMapper;
+  private final LocationService locationService;
 
-  public AddressService(AddressRepository addressRepository, AddressMapper addressMapper) {
+  public AddressService(
+      AddressRepository addressRepository,
+      AddressMapper addressMapper,
+      LocationService locationService) {
     this.addressRepository = addressRepository;
     this.addressMapper = addressMapper;
+    this.locationService = locationService;
   }
 
   public boolean isOwner(Long addressId, Long clientId) {
@@ -35,9 +42,7 @@ public class AddressService {
     client.setId(clientId);
     address.setClient(client);
 
-    City city = new City();
-    city.setId(requestDto.cityId());
-    address.setCity(city);
+    address.setCity(referenceCity(resolveCityId(requestDto.cityId(), requestDto.zipCode())));
 
     if (Boolean.TRUE.equals(requestDto.defaultAddress())) {
       unsetDefaultAddress(clientId);
@@ -64,10 +69,8 @@ public class AddressService {
       unsetDefaultAddress(clientId);
     }
 
-    if (requestDto.cityId() != null) {
-      City city = new City();
-      city.setId(requestDto.cityId());
-      address.setCity(city);
+    if (requestDto.cityId() != null || hasText(requestDto.zipCode())) {
+      address.setCity(referenceCity(resolveCityId(requestDto.cityId(), requestDto.zipCode())));
     }
 
     addressMapper.updateEntity(requestDto, address);
@@ -141,5 +144,32 @@ public class AddressService {
               defaultAddress.setDefaultAddress(false);
               addressRepository.save(defaultAddress);
             });
+  }
+
+  private City referenceCity(Long cityId) {
+    City city = new City();
+    city.setId(cityId);
+    return city;
+  }
+
+  private Long resolveCityId(Long cityId, String zipCode) {
+    if (cityId != null && cityId > 0) {
+      return cityId;
+    }
+
+    if (!hasText(zipCode)) {
+      throw new BadRequestException("CEP e obrigatorio para identificar a cidade.");
+    }
+
+    CepLookupResponseDto lookupResponse = locationService.lookupCep(zipCode);
+    if (lookupResponse == null || lookupResponse.cityId() == null) {
+      throw new BadRequestException("Nao foi possivel identificar a cidade pelo CEP informado.");
+    }
+
+    return lookupResponse.cityId();
+  }
+
+  private boolean hasText(String value) {
+    return value != null && !value.isBlank();
   }
 }

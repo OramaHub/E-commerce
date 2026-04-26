@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.orama.e_commerce.dtos.address.AddressRequestDto;
 import com.orama.e_commerce.dtos.address.AddressResponseDto;
 import com.orama.e_commerce.dtos.address.AddressUpdateRequestDto;
+import com.orama.e_commerce.dtos.location.CepLookupResponseDto;
+import com.orama.e_commerce.exceptions.BadRequestException;
 import com.orama.e_commerce.mapper.AddressMapper;
 import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.City;
@@ -27,6 +29,7 @@ class AddressServiceTest {
 
   @Mock private AddressRepository addressRepository;
   @Mock private AddressMapper addressMapper;
+  @Mock private LocationService locationService;
 
   @InjectMocks private AddressService addressService;
 
@@ -86,6 +89,63 @@ class AddressServiceTest {
     assertNotNull(result);
     assertEquals("Rua das Flores", result.street());
     verify(addressRepository).save(any(Address.class));
+  }
+
+  @Test
+  void shouldCreateAddressResolvingCityIdFromZipCodeWhenCityIdIsMissing() {
+    AddressRequestDto requestDto =
+        new AddressRequestDto(
+            "Rua das Flores", "123", "Apt 45", "Centro", "01234-567", null, false);
+
+    when(addressMapper.toEntity(requestDto)).thenReturn(address);
+    when(locationService.lookupCep("01234-567"))
+        .thenReturn(
+            new CepLookupResponseDto(
+                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", 2L));
+    when(addressRepository.save(any(Address.class))).thenReturn(address);
+    when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
+
+    AddressResponseDto result = addressService.createAddress(requestDto, 1L);
+
+    assertNotNull(result);
+    assertEquals(2L, address.getCity().getId());
+    verify(addressRepository).save(address);
+  }
+
+  @Test
+  void shouldCreateAddressResolvingCityIdFromZipCodeWhenCityIdIsZero() {
+    AddressRequestDto requestDto =
+        new AddressRequestDto("Rua das Flores", "123", "Apt 45", "Centro", "01234-567", 0L, false);
+
+    when(addressMapper.toEntity(requestDto)).thenReturn(address);
+    when(locationService.lookupCep("01234-567"))
+        .thenReturn(
+            new CepLookupResponseDto(
+                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", 2L));
+    when(addressRepository.save(any(Address.class))).thenReturn(address);
+    when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
+
+    AddressResponseDto result = addressService.createAddress(requestDto, 1L);
+
+    assertNotNull(result);
+    assertEquals(2L, address.getCity().getId());
+    verify(addressRepository).save(address);
+  }
+
+  @Test
+  void shouldThrowBadRequestWhenCityIdCannotBeResolvedFromZipCode() {
+    AddressRequestDto requestDto =
+        new AddressRequestDto(
+            "Rua das Flores", "123", "Apt 45", "Centro", "01234-567", null, false);
+
+    when(addressMapper.toEntity(requestDto)).thenReturn(address);
+    when(locationService.lookupCep("01234-567"))
+        .thenReturn(
+            new CepLookupResponseDto(
+                "01234-567", "Rua das Flores", "Centro", "Sao Paulo", "SP", null));
+
+    assertThrows(BadRequestException.class, () -> addressService.createAddress(requestDto, 1L));
+    verify(addressRepository, never()).save(any(Address.class));
   }
 
   @Test
@@ -157,6 +217,10 @@ class AddressServiceTest {
     when(addressRepository.findById(1L)).thenReturn(Optional.of(address));
     when(addressRepository.findByClientIdAndDefaultAddressTrue(1L))
         .thenReturn(Optional.of(existingDefault));
+    when(locationService.lookupCep("98765-432"))
+        .thenReturn(
+            new CepLookupResponseDto(
+                "98765-432", "Rua Nova", "Bairro Novo", "Sao Paulo", "SP", 2L));
     when(addressRepository.save(any(Address.class))).thenReturn(address);
     when(addressMapper.toResponseDto(address)).thenReturn(addressResponseDto);
 

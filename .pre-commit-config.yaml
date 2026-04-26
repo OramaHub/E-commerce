@@ -9,6 +9,7 @@ repos:
     hooks:
       - id: spotless-check
         name: Spotless Check via Maven
-        entry: bash -c "mvn spotless:check"
+        entry: C:/Progra~1/Git/bin/bash.exe
+        args: [-lc, mvn spotless:check]
         language: system
         types: [java]

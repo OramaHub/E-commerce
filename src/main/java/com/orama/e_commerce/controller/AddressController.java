@@ -32,10 +32,7 @@ public class AddressController {
   public ResponseEntity<AddressResponseDto> createAddress(
       @Valid @RequestBody AddressRequestDto requestDto, Authentication authentication) {
 
-    @SuppressWarnings("unchecked")
-    Map<String, Object> details = (Map<String, Object>) authentication.getDetails();
-    Long clientId = Long.valueOf(details.get("id").toString());
-
+    Long clientId = getAuthenticatedClientId(authentication);
     AddressResponseDto dto = addressService.createAddress(requestDto, clientId);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
@@ -48,7 +45,7 @@ public class AddressController {
       @Valid @RequestBody AddressUpdateRequestDto requestDto,
       Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     AddressResponseDto dto = addressService.updateAddress(id, requestDto, clientId);
     return ResponseEntity.ok(dto);
   }
@@ -59,7 +56,7 @@ public class AddressController {
   public ResponseEntity<AddressResponseDto> getAddressById(
       @PathVariable Long id, Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     AddressResponseDto dto = addressService.getAddressById(id, clientId);
     return ResponseEntity.ok(dto);
   }
@@ -69,7 +66,7 @@ public class AddressController {
   @Operation(summary = "Lista endereços do cliente autenticado")
   public ResponseEntity<List<AddressResponseDto>> getMyAddresses(Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     List<AddressResponseDto> addresses = addressService.getAddressesByClient(clientId);
     return ResponseEntity.ok(addresses);
   }
@@ -79,7 +76,7 @@ public class AddressController {
   @Operation(summary = "Busca endereço padrão do cliente autenticado")
   public ResponseEntity<AddressResponseDto> getDefaultAddress(Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     AddressResponseDto dto = addressService.getDefaultAddress(clientId);
     return ResponseEntity.ok(dto);
   }
@@ -89,7 +86,7 @@ public class AddressController {
   @Operation(summary = "Remove um endereço")
   public ResponseEntity<Void> deleteAddress(@PathVariable Long id, Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     addressService.deleteAddress(id, clientId);
     return ResponseEntity.noContent().build();
   }
@@ -100,8 +97,29 @@ public class AddressController {
   public ResponseEntity<Void> setDefaultAddress(
       @PathVariable Long id, Authentication authentication) {
 
-    Long clientId = (Long) authentication.getDetails();
+    Long clientId = getAuthenticatedClientId(authentication);
     addressService.setDefaultAddress(id, clientId);
     return ResponseEntity.noContent().build();
+  }
+
+  private Long getAuthenticatedClientId(Authentication authentication) {
+    Object details = authentication.getDetails();
+
+    if (details instanceof Map<?, ?> detailsMap) {
+      Object clientId = detailsMap.get("id");
+      if (clientId != null) {
+        return Long.valueOf(clientId.toString());
+      }
+    }
+
+    if (details instanceof Number number) {
+      return number.longValue();
+    }
+
+    if (details instanceof String value && !value.isBlank()) {
+      return Long.valueOf(value);
+    }
+
+    throw new IllegalStateException("Não foi possível identificar o cliente autenticado.");
   }
 }
