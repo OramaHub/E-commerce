@@ -37,6 +37,7 @@ class OrderServiceTest {
   @Mock private AddressRepository addressRepository;
   @Mock private OrderMapper orderMapper;
   @Mock private ShippingService shippingService;
+  @Mock private PaymentApplicationService paymentApplicationService;
 
   @InjectMocks private OrderService orderService;
 
@@ -318,6 +319,7 @@ class OrderServiceTest {
     assertNotNull(result);
     assertEquals(OrderStatus.CANCELLED, order.getStatus());
     verify(orderRepository).save(order);
+    verifyNoInteractions(paymentApplicationService);
   }
 
   @Test
@@ -331,6 +333,56 @@ class OrderServiceTest {
     assertNotNull(result);
     assertEquals(OrderStatus.CANCELLED, order.getStatus());
     verify(orderRepository).save(order);
+    verifyNoInteractions(paymentApplicationService);
+  }
+
+  @Test
+  void shouldCancelRemotePaymentBeforeLocalCancel() {
+    order.setPaymentId("MP-ORDER-123");
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+    when(paymentApplicationService.cancelOrRefundRemotePayment(order))
+        .thenReturn(OrderStatus.CANCELLED);
+    when(orderRepository.save(any(Order.class))).thenReturn(order);
+    when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+
+    OrderResponseDto result = orderService.cancelOrder(1L, 1L);
+
+    assertNotNull(result);
+    assertEquals(OrderStatus.CANCELLED, order.getStatus());
+    verify(paymentApplicationService).cancelOrRefundRemotePayment(order);
+    verify(orderRepository).save(order);
+  }
+
+  @Test
+  void shouldRefundRemotePaymentBeforeLocalRefund() {
+    order.setPaymentId("MP-ORDER-123");
+    order.setStatus(OrderStatus.PAYMENT_CONFIRMED);
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+    when(paymentApplicationService.cancelOrRefundRemotePayment(order))
+        .thenReturn(OrderStatus.REFUNDED);
+    when(orderRepository.save(any(Order.class))).thenReturn(order);
+    when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+
+    OrderResponseDto result = orderService.cancelOrder(1L, 1L);
+
+    assertNotNull(result);
+    assertEquals(OrderStatus.REFUNDED, order.getStatus());
+    verify(paymentApplicationService).cancelOrRefundRemotePayment(order);
+    verify(orderRepository).save(order);
+  }
+
+  @Test
+  void shouldNotCallRemoteAgainWhenOrderAlreadyRefunded() {
+    order.setPaymentId("MP-ORDER-123");
+    order.setStatus(OrderStatus.REFUNDED);
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+    when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+
+    OrderResponseDto result = orderService.cancelOrder(1L, 1L);
+
+    assertNotNull(result);
+    verifyNoInteractions(paymentApplicationService);
+    verify(orderRepository, never()).save(any(Order.class));
   }
 
   @Test

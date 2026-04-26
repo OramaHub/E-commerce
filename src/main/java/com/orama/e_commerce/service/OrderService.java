@@ -31,18 +31,21 @@ public class OrderService {
   private final AddressRepository addressRepository;
   private final OrderMapper orderMapper;
   private final ShippingService shippingService;
+  private final PaymentApplicationService paymentApplicationService;
 
   public OrderService(
       OrderRepository orderRepository,
       CartRepository cartRepository,
       AddressRepository addressRepository,
       OrderMapper orderMapper,
-      ShippingService shippingService) {
+      ShippingService shippingService,
+      PaymentApplicationService paymentApplicationService) {
     this.orderRepository = orderRepository;
     this.cartRepository = cartRepository;
     this.addressRepository = addressRepository;
     this.orderMapper = orderMapper;
     this.shippingService = shippingService;
+    this.paymentApplicationService = paymentApplicationService;
   }
 
   @Transactional
@@ -164,7 +167,15 @@ public class OrderService {
           "Você não tem permissão para cancelar este pedido");
     }
 
-    order.setStatus(OrderStatus.CANCELLED);
+    if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.REFUNDED) {
+      return orderMapper.toResponseDto(order);
+    }
+
+    OrderStatus finalStatus =
+        order.getPaymentId() == null || order.getPaymentId().isBlank()
+            ? OrderStatus.CANCELLED
+            : paymentApplicationService.cancelOrRefundRemotePayment(order);
+    order.setStatus(finalStatus);
     Order cancelledOrder = orderRepository.save(order);
 
     return orderMapper.toResponseDto(cancelledOrder);

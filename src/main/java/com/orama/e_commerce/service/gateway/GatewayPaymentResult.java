@@ -9,4 +9,29 @@ public record GatewayPaymentResult(
     String qrCode,
     String qrCodeBase64,
     String ticketUrl,
-    String digitableLine) {}
+    String digitableLine,
+    String challengeUrl) {
+
+  public GatewayPaymentResult(
+      String providerOrderId,
+      String providerPaymentId,
+      String status,
+      String statusDetail,
+      String paymentMethodId,
+      String qrCode,
+      String qrCodeBase64,
+      String ticketUrl,
+      String digitableLine) {
+    this(
+        providerOrderId,
+        providerPaymentId,
+        status,
+        statusDetail,
+        paymentMethodId,
+        qrCode,
+        qrCodeBase64,
+        ticketUrl,
+        digitableLine,
+        null);
+  }
+}

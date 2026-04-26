@@ -32,10 +32,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     String clientIp = getClientIp(request);
     String endpoint = getEndpointKey(request);
-    String bucketKey = clientIp + ":" + endpoint;
+    EndpointRule endpointRule = resolveEndpointRule(endpoint);
+    String bucketKey = clientIp + ":" + endpointRule.bucketKey();
 
-    int limit = getLimitForEndpoint(endpoint);
-    Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket(limit));
+    Bucket bucket =
+        buckets.computeIfAbsent(bucketKey, k -> createBucket(endpointRule.requestsPerMinute()));
 
     if (bucket.tryConsume(1)) {
       response.setHeader("X-Rate-Limit-Remaining", String.valueOf(bucket.getAvailableTokens()));
@@ -50,16 +51,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
   }
 
-  private int getLimitForEndpoint(String endpoint) {
+  private EndpointRule resolveEndpointRule(String endpoint) {
     Map<String, RateLimitProperties.EndpointLimit> endpoints = rateLimitProperties.getEndpoints();
 
     for (Map.Entry<String, RateLimitProperties.EndpointLimit> entry : endpoints.entrySet()) {
-      if (endpoint.startsWith(entry.getKey())) {
-        return entry.getValue().getRequestsPerMinute();
+      if (matchesEndpoint(endpoint, entry.getKey())) {
+        return new EndpointRule(entry.getKey(), entry.getValue().getRequestsPerMinute());
       }
     }
 
-    return rateLimitProperties.getDefaultRequestsPerMinute();
+    return new EndpointRule(endpoint, rateLimitProperties.getDefaultRequestsPerMinute());
+  }
+
+  private boolean matchesEndpoint(String endpoint, String pattern) {
+    if (pattern.endsWith("/**")) {
+      String prefix = pattern.substring(0, pattern.length() - 3);
+      return endpoint.startsWith(prefix + "/");
+    }
+    return endpoint.equals(pattern);
   }
 
   private String getEndpointKey(HttpServletRequest request) {
@@ -82,4 +91,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     return request.getRemoteAddr();
   }
+
+  private record EndpointRule(String bucketKey, int requestsPerMinute) {}
 }

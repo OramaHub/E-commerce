@@ -4,6 +4,7 @@ public enum PaymentAttemptStatus {
   CREATED,
   PENDING,
   AUTHORIZED,
+  AWAITING_CHALLENGE,
   APPROVED,
   FAILED,
   CANCELLED,

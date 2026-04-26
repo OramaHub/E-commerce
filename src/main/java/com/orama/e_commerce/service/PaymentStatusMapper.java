@@ -13,9 +13,11 @@ public class PaymentStatusMapper {
     return switch (mpStatus) {
       case "created" -> PaymentAttemptStatus.CREATED;
       case "processing", "in_review" -> PaymentAttemptStatus.PENDING;
-      case "action_required" -> "waiting_capture".equals(mpStatusDetail)
-          ? PaymentAttemptStatus.AUTHORIZED
-          : PaymentAttemptStatus.PENDING;
+      case "action_required" -> switch (mpStatusDetail != null ? mpStatusDetail : "") {
+        case "waiting_capture" -> PaymentAttemptStatus.AUTHORIZED;
+        case "pending_challenge" -> PaymentAttemptStatus.AWAITING_CHALLENGE;
+        default -> PaymentAttemptStatus.PENDING;
+      };
       case "processed" -> PaymentAttemptStatus.APPROVED;
       case "failed" -> PaymentAttemptStatus.FAILED;
       case "canceled" -> PaymentAttemptStatus.CANCELLED;

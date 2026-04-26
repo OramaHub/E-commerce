@@ -12,11 +12,21 @@ public class FakePaymentGateway implements PaymentGateway {
   private PaymentGatewayException nextCreateException;
   private GatewayOrderResult nextOrderStatusResult;
   private PaymentGatewayException nextOrderStatusException;
+  private GatewayOrderResult nextCancelOrderResult;
+  private PaymentGatewayException nextCancelOrderException;
+  private GatewayOrderResult nextRefundOrderResult;
+  private PaymentGatewayException nextRefundOrderException;
 
   private CreatePaymentCommand lastCommand;
   private String lastQueriedOrderId;
+  private String lastCancelledOrderId;
+  private String lastCancelIdempotencyKey;
+  private String lastRefundedOrderId;
+  private String lastRefundIdempotencyKey;
   private int createPaymentCallCount;
   private int getOrderStatusCallCount;
+  private int cancelOrderCallCount;
+  private int refundOrderCallCount;
 
   public void setNextCreateResult(GatewayPaymentResult result) {
     this.nextCreateResult = result;
@@ -38,6 +48,26 @@ public class FakePaymentGateway implements PaymentGateway {
     this.nextOrderStatusResult = null;
   }
 
+  public void setNextCancelOrderResult(GatewayOrderResult result) {
+    this.nextCancelOrderResult = result;
+    this.nextCancelOrderException = null;
+  }
+
+  public void setNextCancelOrderException(PaymentGatewayException exception) {
+    this.nextCancelOrderException = exception;
+    this.nextCancelOrderResult = null;
+  }
+
+  public void setNextRefundOrderResult(GatewayOrderResult result) {
+    this.nextRefundOrderResult = result;
+    this.nextRefundOrderException = null;
+  }
+
+  public void setNextRefundOrderException(PaymentGatewayException exception) {
+    this.nextRefundOrderException = exception;
+    this.nextRefundOrderResult = null;
+  }
+
   public CreatePaymentCommand getLastCommand() {
     return lastCommand;
   }
@@ -46,12 +76,36 @@ public class FakePaymentGateway implements PaymentGateway {
     return lastQueriedOrderId;
   }
 
+  public String getLastCancelledOrderId() {
+    return lastCancelledOrderId;
+  }
+
+  public String getLastCancelIdempotencyKey() {
+    return lastCancelIdempotencyKey;
+  }
+
+  public String getLastRefundedOrderId() {
+    return lastRefundedOrderId;
+  }
+
+  public String getLastRefundIdempotencyKey() {
+    return lastRefundIdempotencyKey;
+  }
+
   public int getCreatePaymentCallCount() {
     return createPaymentCallCount;
   }
 
   public int getGetOrderStatusCallCount() {
     return getOrderStatusCallCount;
+  }
+
+  public int getCancelOrderCallCount() {
+    return cancelOrderCallCount;
+  }
+
+  public int getRefundOrderCallCount() {
+    return refundOrderCallCount;
   }
 
   @Override
@@ -87,6 +141,44 @@ public class FakePaymentGateway implements PaymentGateway {
     }
     GatewayOrderResult result = nextOrderStatusResult;
     nextOrderStatusResult = null;
+    return result;
+  }
+
+  @Override
+  public GatewayOrderResult cancelOrder(String providerOrderId, String idempotencyKey) {
+    this.lastCancelledOrderId = providerOrderId;
+    this.lastCancelIdempotencyKey = idempotencyKey;
+    this.cancelOrderCallCount++;
+    if (nextCancelOrderException != null) {
+      PaymentGatewayException toThrow = nextCancelOrderException;
+      nextCancelOrderException = null;
+      throw toThrow;
+    }
+    if (nextCancelOrderResult == null) {
+      throw new IllegalStateException(
+          "FakePaymentGateway: cancelOrder chamado sem programacao previa");
+    }
+    GatewayOrderResult result = nextCancelOrderResult;
+    nextCancelOrderResult = null;
+    return result;
+  }
+
+  @Override
+  public GatewayOrderResult refundOrder(String providerOrderId, String idempotencyKey) {
+    this.lastRefundedOrderId = providerOrderId;
+    this.lastRefundIdempotencyKey = idempotencyKey;
+    this.refundOrderCallCount++;
+    if (nextRefundOrderException != null) {
+      PaymentGatewayException toThrow = nextRefundOrderException;
+      nextRefundOrderException = null;
+      throw toThrow;
+    }
+    if (nextRefundOrderResult == null) {
+      throw new IllegalStateException(
+          "FakePaymentGateway: refundOrder chamado sem programacao previa");
+    }
+    GatewayOrderResult result = nextRefundOrderResult;
+    nextRefundOrderResult = null;
     return result;
   }
 }

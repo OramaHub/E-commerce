@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import com.orama.e_commerce.exceptions.payment.PaymentAlreadyInProgressException
 import com.orama.e_commerce.exceptions.payment.PermanentPaymentGatewayException;
 import com.orama.e_commerce.exceptions.payment.TransientPaymentGatewayException;
 import com.orama.e_commerce.exceptions.payment.WebhookProcessingException;
+import com.orama.e_commerce.exceptions.payment.WebhookSignatureException;
 import com.orama.e_commerce.models.Address;
 import com.orama.e_commerce.models.Client;
 import com.orama.e_commerce.models.Order;
@@ -60,12 +62,15 @@ class PaymentApplicationServiceTest {
 
   FakePaymentGateway fakeGateway;
   PaymentStatusMapper statusMapper;
+  PaymentAttemptService paymentAttemptService;
   PaymentApplicationService service;
 
   @BeforeEach
   void setUp() {
     fakeGateway = new FakePaymentGateway();
     statusMapper = new PaymentStatusMapper();
+    paymentAttemptService =
+        new PaymentAttemptService(paymentAttemptRepository, orderRepository, eventPublisher);
     service =
         new PaymentApplicationService(
             orderRepository,
@@ -73,7 +78,8 @@ class PaymentApplicationServiceTest {
             fakeGateway,
             webhookVerifier,
             statusMapper,
-            eventPublisher);
+            eventPublisher,
+            paymentAttemptService);
   }
 
   private InitiatePaymentRequestDto pixRequest() {
@@ -168,6 +174,82 @@ class PaymentApplicationServiceTest {
       assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_CONFIRMED);
       assertThat(order.getPaymentId()).isEqualTo("MP-ORDER-789");
       assertThat(fakeGateway.getCreatePaymentCallCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Cartao com 3DS challenge: retorna challengeUrl e attempt AWAITING_CHALLENGE")
+    void initiatePayment_creditCardPendingChallenge_returnsChallengeUrl() {
+      Address address = AddressTestBuilder.anAddress().build();
+      Client client = ClientTestBuilder.aClient().withId(50L).withAddresses(address).build();
+      Order order =
+          OrderTestBuilder.anOrder()
+              .withId(3L)
+              .withClient(client)
+              .withDeliveryAddress(address)
+              .withStatus(OrderStatus.PENDING)
+              .build();
+
+      when(orderRepository.findById(3L)).thenReturn(Optional.of(order));
+      when(paymentAttemptRepository.findTopByOrderIdOrderByAttemptNumberDesc(3L))
+          .thenReturn(Optional.empty());
+      fakeGateway.setNextCreateResult(
+          new GatewayPaymentResult(
+              "MP-ORDER-3DS",
+              "MP-PAY-3DS",
+              "action_required",
+              "pending_challenge",
+              "master",
+              null,
+              null,
+              null,
+              null,
+              "https://www.mercadopago.com.br/challenge"));
+
+      InitiatePaymentResponseDto response = service.initiatePayment(3L, 50L, creditCardRequest());
+
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+      assertThat(response.challengeUrl()).isEqualTo("https://www.mercadopago.com.br/challenge");
+
+      ArgumentCaptor<PaymentAttempt> attemptCaptor = ArgumentCaptor.forClass(PaymentAttempt.class);
+      verify(paymentAttemptRepository, times(2)).save(attemptCaptor.capture());
+      PaymentAttempt finalAttempt = attemptCaptor.getAllValues().get(1);
+      assertThat(finalAttempt.getStatus()).isEqualTo(PaymentAttemptStatus.AWAITING_CHALLENGE);
+      assertThat(finalAttempt.getStatusDetail()).isEqualTo("pending_challenge");
+    }
+
+    @Test
+    @DisplayName("Sync 3DS: consulta MP, atualiza attempt e confirma pedido apos challenge")
+    void syncPaymentStatus_afterChallenge_updatesAttemptAndOrder() {
+      Client client = ClientTestBuilder.aClient().withId(50L).build();
+      Order order =
+          OrderTestBuilder.anOrder()
+              .withId(4L)
+              .withClient(client)
+              .withStatus(OrderStatus.PAYMENT_PENDING)
+              .build();
+      order.setPaymentId("MP-ORDER-3DS");
+
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setProviderOrderId("MP-ORDER-3DS");
+      attempt.setProviderPaymentId("MP-PAY-3DS");
+      attempt.setStatus(PaymentAttemptStatus.AWAITING_CHALLENGE);
+
+      when(orderRepository.findById(4L)).thenReturn(Optional.of(order));
+      when(paymentAttemptRepository.findByProviderOrderId("MP-ORDER-3DS"))
+          .thenReturn(Optional.of(attempt));
+      fakeGateway.setNextOrderStatusResult(
+          new GatewayOrderResult("MP-ORDER-3DS", "processed", "accredited", "master"));
+
+      InitiatePaymentResponseDto response = service.syncPaymentStatus(4L, 50L);
+
+      assertThat(fakeGateway.getLastQueriedOrderId()).isEqualTo("MP-ORDER-3DS");
+      assertThat(response.status()).isEqualTo("processed");
+      assertThat(response.statusDetail()).isEqualTo("accredited");
+      assertThat(response.paymentId()).isEqualTo("MP-PAY-3DS");
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.APPROVED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_CONFIRMED);
+      verify(eventPublisher).publishEvent(any(PaymentApprovedEvent.class));
     }
   }
 
@@ -313,6 +395,21 @@ class PaymentApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("Sync status de order de outro client: lanca OrderOwnershipException")
+    void syncPaymentStatus_orderBelongsToAnotherClient_throwsOwnershipException() {
+      Client owner = ClientTestBuilder.aClient().withId(50L).build();
+      Order order = OrderTestBuilder.anOrder().withId(1L).withClient(owner).build();
+      order.setPaymentId("MP-ORDER-123");
+
+      when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+      assertThatThrownBy(() -> service.syncPaymentStatus(1L, 999L))
+          .isInstanceOf(OrderOwnershipException.class);
+
+      assertThat(fakeGateway.getGetOrderStatusCallCount()).isZero();
+    }
+
+    @Test
     @DisplayName("Order em PAYMENT_PENDING: lanca PaymentAlreadyInProgressException")
     void initiatePayment_orderInPaymentPending_throwsAlreadyInProgress() {
       Client client = ClientTestBuilder.aClient().withId(50L).build();
@@ -423,6 +520,29 @@ class PaymentApplicationServiceTest {
 
       assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
     }
+
+    @Test
+    @DisplayName(
+        "Gateway exception: attempt salvo com FAILED via markFailed independente do rollback")
+    void initiatePayment_gatewayException_savesAttemptAsFailedViaRequiresNew() {
+      Client client = ClientTestBuilder.aClient().withId(50L).build();
+      Order order =
+          OrderTestBuilder.anOrder()
+              .withId(1L)
+              .withClient(client)
+              .withStatus(OrderStatus.PENDING)
+              .build();
+
+      when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+      when(paymentAttemptRepository.findTopByOrderIdOrderByAttemptNumberDesc(1L))
+          .thenReturn(Optional.empty());
+      fakeGateway.setNextCreateException(new TransientPaymentGatewayException("timeout"));
+
+      assertThatThrownBy(() -> service.initiatePayment(1L, 50L, pixRequest()))
+          .isInstanceOf(TransientPaymentGatewayException.class);
+
+      verify(paymentAttemptRepository, times(2)).save(any());
+    }
   }
 
   @Nested
@@ -484,6 +604,43 @@ class PaymentApplicationServiceTest {
       assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_CONFIRMED);
       assertThat(order.getPaymentMethod()).isEqualTo("visa");
       verify(webhookVerifier).verify("ts=1,v1=abc", "req-id-1", "MP-ORDER-123");
+    }
+
+    @Test
+    @DisplayName("data.id via query tem precedencia sobre body")
+    void handleWebhook_queryDataId_takesPrecedenceOverBodyDataId() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(1L).withStatus(OrderStatus.PAYMENT_PENDING).build();
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.PENDING);
+      attempt.setProviderOrderId("MP-ORDER-QUERY");
+
+      MercadoPagoWebhookDto dto =
+          new MercadoPagoWebhookDto(
+              "order", "order.updated", new MercadoPagoWebhookDto.WebhookData("MP-ORDER-BODY"));
+
+      when(paymentAttemptRepository.findByProviderOrderId("MP-ORDER-QUERY"))
+          .thenReturn(Optional.of(attempt));
+      fakeGateway.setNextOrderStatusResult(
+          new GatewayOrderResult("MP-ORDER-QUERY", "processed", null, "visa"));
+
+      service.handleWebhook("sig", "req-id-1", "MP-ORDER-QUERY", dto);
+
+      assertThat(fakeGateway.getLastQueriedOrderId()).isEqualTo("MP-ORDER-QUERY");
+      verify(webhookVerifier).verify("sig", "req-id-1", "MP-ORDER-QUERY");
+    }
+
+    @Test
+    @DisplayName("Webhook de order sem data.id e rejeitado antes de consultar gateway")
+    void handleWebhook_missingDataId_throwsSignatureException() {
+      MercadoPagoWebhookDto dto = new MercadoPagoWebhookDto("order", "order.updated", null);
+
+      assertThatThrownBy(() -> service.handleWebhook("sig", "req-id-1", null, dto))
+          .isInstanceOf(WebhookSignatureException.class);
+
+      verify(webhookVerifier, never()).verify(any(), any(), any());
+      assertThat(fakeGateway.getGetOrderStatusCallCount()).isZero();
     }
 
     @Test
@@ -588,8 +745,9 @@ class PaymentApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Gateway falha no initiate (rollback path): nenhum evento publicado")
-    void initiatePayment_gatewayException_doesNotPublishAnyEvent() {
+    @DisplayName(
+        "Gateway falha no initiate (rollback path): publica PaymentFailedEvent com previousStatus=CREATED")
+    void initiatePayment_gatewayException_publishesPaymentFailedEvent() {
       Client client = ClientTestBuilder.aClient().withId(50L).build();
       Order order =
           OrderTestBuilder.anOrder()
@@ -606,7 +764,11 @@ class PaymentApplicationServiceTest {
       assertThatThrownBy(() -> service.initiatePayment(10L, 50L, pixRequest()))
           .isInstanceOf(TransientPaymentGatewayException.class);
 
-      verifyNoInteractions(eventPublisher);
+      ArgumentCaptor<PaymentFailedEvent> captor = ArgumentCaptor.forClass(PaymentFailedEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+      PaymentFailedEvent event = captor.getValue();
+      assertThat(event.previousStatus()).isEqualTo(PaymentAttemptStatus.CREATED);
+      assertThat(event.newStatus()).isEqualTo(PaymentAttemptStatus.FAILED);
     }
 
     @Test
@@ -702,6 +864,206 @@ class PaymentApplicationServiceTest {
           .isInstanceOf(WebhookProcessingException.class);
 
       verifyNoInteractions(eventPublisher);
+    }
+  }
+
+  @Nested
+  @DisplayName("Cancelamento e reembolso")
+  class CancellationAndRefund {
+
+    @Test
+    @DisplayName("Pedido sem paymentId remoto: retorna CANCELLED sem chamar gateway")
+    void cancelOrRefundRemotePayment_withoutPaymentId_returnsCancelled() {
+      Order order = OrderTestBuilder.anOrder().withId(10L).withStatus(OrderStatus.PENDING).build();
+
+      OrderStatus result = service.cancelOrRefundRemotePayment(order);
+
+      assertThat(result).isEqualTo(OrderStatus.CANCELLED);
+      assertThat(fakeGateway.getGetOrderStatusCallCount()).isZero();
+      assertThat(fakeGateway.getCancelOrderCallCount()).isZero();
+      assertThat(fakeGateway.getRefundOrderCallCount()).isZero();
+    }
+
+    @Test
+    @DisplayName(
+        "Pagamento pendente remoto: consulta MP, cancela com chave idempotente e retorna CANCELLED")
+    void cancelOrRefundRemotePayment_pendingRemotePayment_cancelsRemoteOrder() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(10L).withStatus(OrderStatus.PAYMENT_PENDING).build();
+      order.setPaymentId("MP-ORDER-PENDING");
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.PENDING);
+      attempt.setProviderOrderId("MP-ORDER-PENDING");
+
+      when(paymentAttemptRepository.findByProviderOrderId("MP-ORDER-PENDING"))
+          .thenReturn(Optional.of(attempt));
+      fakeGateway.setNextOrderStatusResult(
+          new GatewayOrderResult("MP-ORDER-PENDING", "action_required", "waiting_payment", "pix"));
+      fakeGateway.setNextCancelOrderResult(
+          new GatewayOrderResult("MP-ORDER-PENDING", "canceled", "canceled", "pix"));
+
+      OrderStatus result = service.cancelOrRefundRemotePayment(order);
+
+      assertThat(result).isEqualTo(OrderStatus.CANCELLED);
+      assertThat(fakeGateway.getLastQueriedOrderId()).isEqualTo("MP-ORDER-PENDING");
+      assertThat(fakeGateway.getLastCancelledOrderId()).isEqualTo("MP-ORDER-PENDING");
+      assertThat(fakeGateway.getLastCancelIdempotencyKey()).isEqualTo("order-10-cancel-v1");
+      assertThat(fakeGateway.getRefundOrderCallCount()).isZero();
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.CANCELLED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName(
+        "Pagamento aprovado remoto: consulta MP, reembolsa com chave idempotente e retorna REFUNDED")
+    void cancelOrRefundRemotePayment_approvedRemotePayment_refundsRemoteOrder() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(11L).withStatus(OrderStatus.PAYMENT_CONFIRMED).build();
+      order.setPaymentId("MP-ORDER-APPROVED");
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.APPROVED);
+      attempt.setProviderOrderId("MP-ORDER-APPROVED");
+
+      when(paymentAttemptRepository.findByProviderOrderId("MP-ORDER-APPROVED"))
+          .thenReturn(Optional.of(attempt));
+      fakeGateway.setNextOrderStatusResult(
+          new GatewayOrderResult("MP-ORDER-APPROVED", "processed", "accredited", "visa"));
+      fakeGateway.setNextRefundOrderResult(
+          new GatewayOrderResult("MP-ORDER-APPROVED", "refunded", "refunded", "visa"));
+
+      OrderStatus result = service.cancelOrRefundRemotePayment(order);
+
+      assertThat(result).isEqualTo(OrderStatus.REFUNDED);
+      assertThat(fakeGateway.getLastQueriedOrderId()).isEqualTo("MP-ORDER-APPROVED");
+      assertThat(fakeGateway.getLastRefundedOrderId()).isEqualTo("MP-ORDER-APPROVED");
+      assertThat(fakeGateway.getLastRefundIdempotencyKey()).isEqualTo("order-11-refund-v1");
+      assertThat(fakeGateway.getCancelOrderCallCount()).isZero();
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.REFUNDED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+    }
+
+    @Test
+    @DisplayName("Pagamento ja reembolsado no MP: nao duplica reembolso")
+    void cancelOrRefundRemotePayment_alreadyRefunded_doesNotRefundAgain() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(12L).withStatus(OrderStatus.PAYMENT_CONFIRMED).build();
+      order.setPaymentId("MP-ORDER-REFUNDED");
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.APPROVED);
+      attempt.setProviderOrderId("MP-ORDER-REFUNDED");
+
+      when(paymentAttemptRepository.findByProviderOrderId("MP-ORDER-REFUNDED"))
+          .thenReturn(Optional.of(attempt));
+      fakeGateway.setNextOrderStatusResult(
+          new GatewayOrderResult("MP-ORDER-REFUNDED", "refunded", "refunded", "visa"));
+
+      OrderStatus result = service.cancelOrRefundRemotePayment(order);
+
+      assertThat(result).isEqualTo(OrderStatus.REFUNDED);
+      assertThat(fakeGateway.getRefundOrderCallCount()).isZero();
+      assertThat(fakeGateway.getCancelOrderCallCount()).isZero();
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.REFUNDED);
+    }
+  }
+
+  @Nested
+  @DisplayName("Reconciliacao")
+  class Reconciliation {
+
+    @Test
+    @DisplayName("PENDING -> APPROVED: attempt APPROVED, Order PAYMENT_CONFIRMED, evento publicado")
+    void applyReconciliation_pendingToApproved_updatesAndPublishesEvent() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(5L).withStatus(OrderStatus.PAYMENT_PENDING).build();
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.PENDING);
+
+      when(paymentAttemptRepository.findById(99L)).thenReturn(Optional.of(attempt));
+
+      service.applyReconciliation(99L, new GatewayOrderResult("MP-ORD", "processed", null, "visa"));
+
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.APPROVED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_CONFIRMED);
+      ArgumentCaptor<PaymentApprovedEvent> captor =
+          ArgumentCaptor.forClass(PaymentApprovedEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+      assertThat(captor.getValue().previousStatus()).isEqualTo(PaymentAttemptStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("Status igual (PENDING -> PENDING): nenhum evento publicado")
+    void applyReconciliation_sameStatus_doesNotPublishEvent() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(5L).withStatus(OrderStatus.PAYMENT_PENDING).build();
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.PENDING);
+
+      when(paymentAttemptRepository.findById(99L)).thenReturn(Optional.of(attempt));
+
+      service.applyReconciliation(99L, new GatewayOrderResult("MP-ORD", "processing", null, null));
+
+      verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("Attempt nao encontrado: no-op silencioso")
+    void applyReconciliation_attemptNotFound_isNoOp() {
+      when(paymentAttemptRepository.findById(404L)).thenReturn(Optional.empty());
+
+      assertThatNoException()
+          .isThrownBy(
+              () ->
+                  service.applyReconciliation(
+                      404L, new GatewayOrderResult("X", "processed", null, null)));
+
+      verify(paymentAttemptRepository, never()).save(any());
+      verify(orderRepository, never()).save(any());
+      verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("APPROVED -> PENDING: transicao regressiva ignorada")
+    void applyReconciliation_approvedToPending_isIgnored() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(5L).withStatus(OrderStatus.PAYMENT_CONFIRMED).build();
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.APPROVED);
+
+      when(paymentAttemptRepository.findById(99L)).thenReturn(Optional.of(attempt));
+
+      service.applyReconciliation(99L, new GatewayOrderResult("MP-ORD", "processing", null, null));
+
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.APPROVED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_CONFIRMED);
+      verify(paymentAttemptRepository, never()).save(any());
+      verify(orderRepository, never()).save(any());
+      verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("APPROVED -> REFUNDED: transicao final permitida")
+    void applyReconciliation_approvedToRefunded_isAllowed() {
+      Order order =
+          OrderTestBuilder.anOrder().withId(5L).withStatus(OrderStatus.PAYMENT_CONFIRMED).build();
+      PaymentAttempt attempt = new PaymentAttempt();
+      attempt.setOrder(order);
+      attempt.setStatus(PaymentAttemptStatus.APPROVED);
+
+      when(paymentAttemptRepository.findById(99L)).thenReturn(Optional.of(attempt));
+
+      service.applyReconciliation(
+          99L, new GatewayOrderResult("MP-ORD", "refunded", "refunded", null));
+
+      assertThat(attempt.getStatus()).isEqualTo(PaymentAttemptStatus.REFUNDED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+      verify(paymentAttemptRepository).save(attempt);
+      verify(orderRepository).save(order);
     }
   }
 }

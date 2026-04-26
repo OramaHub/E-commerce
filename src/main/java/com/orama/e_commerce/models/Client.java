@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "tb_client")
@@ -32,6 +33,7 @@ public class Client {
   @Column(name = "active")
   private Boolean active;
 
+  @CreationTimestamp
   @Column(name = "created_at")
   private Instant createdAt;
 

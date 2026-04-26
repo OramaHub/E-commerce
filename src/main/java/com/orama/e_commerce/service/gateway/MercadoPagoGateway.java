@@ -1,6 +1,8 @@
 package com.orama.e_commerce.service.gateway;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mercadopago.client.order.OrderClient;
 import com.mercadopago.client.order.OrderCreateRequest;
@@ -48,6 +50,7 @@ public class MercadoPagoGateway implements PaymentGateway {
       OrderCreateRequest request = buildOrderRequest(command);
       JsonObject payload = Serializer.serializeToJson(request);
       applyInstallmentsWorkaround(payload, command);
+      applyThreeDsConfig(payload, command);
 
       MPRequestOptions options =
           MPRequestOptions.builder()
@@ -55,7 +58,15 @@ public class MercadoPagoGateway implements PaymentGateway {
               .build();
 
       Order mpOrder = customOrderClient.createOrder(payload, options);
-      return mapPaymentResponse(mpOrder);
+      GatewayPaymentResult result = mapPaymentResponse(mpOrder);
+      log.info(
+          "MP order created: orderId={}, paymentId={}, status={}, statusDetail={}, challengeUrlPresent={}",
+          result.providerOrderId(),
+          result.providerPaymentId(),
+          result.status(),
+          result.statusDetail(),
+          result.challengeUrl() != null);
+      return result;
 
     } catch (MPApiException e) {
       throw classifyMpApiException(e, "criar order de pagamento");
@@ -78,6 +89,40 @@ public class MercadoPagoGateway implements PaymentGateway {
       throw new PermanentPaymentGatewayException(
           "Erro de SDK ao consultar order: " + e.getMessage(), e);
     }
+  }
+
+  @Override
+  public GatewayOrderResult cancelOrder(String providerOrderId, String idempotencyKey) {
+    try {
+      Order mpOrder = orderClient.cancel(providerOrderId, buildIdempotencyOptions(idempotencyKey));
+      return mapOrderResponse(mpOrder);
+    } catch (MPApiException e) {
+      throw classifyMpApiException(e, "cancelar order");
+    } catch (MPException e) {
+      log.error("MP SDK error ao cancelar order: {}", e.getMessage());
+      throw new PermanentPaymentGatewayException(
+          "Erro de SDK ao cancelar order: " + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public GatewayOrderResult refundOrder(String providerOrderId, String idempotencyKey) {
+    try {
+      Order mpOrder = orderClient.refund(providerOrderId, buildIdempotencyOptions(idempotencyKey));
+      return mapOrderResponse(mpOrder);
+    } catch (MPApiException e) {
+      throw classifyMpApiException(e, "reembolsar order");
+    } catch (MPException e) {
+      log.error("MP SDK error ao reembolsar order: {}", e.getMessage());
+      throw new PermanentPaymentGatewayException(
+          "Erro de SDK ao reembolsar order: " + e.getMessage(), e);
+    }
+  }
+
+  private MPRequestOptions buildIdempotencyOptions(String idempotencyKey) {
+    return MPRequestOptions.builder()
+        .customHeaders(Map.of("X-Idempotency-Key", idempotencyKey))
+        .build();
   }
 
   private OrderCreateRequest buildOrderRequest(CreatePaymentCommand command) {
@@ -139,7 +184,8 @@ public class MercadoPagoGateway implements PaymentGateway {
         method != null ? method.getQrCode() : null,
         method != null ? method.getQrCodeBase64() : null,
         method != null ? method.getTicketUrl() : null,
-        method != null ? method.getDigitableLine() : null);
+        method != null ? method.getDigitableLine() : null,
+        extractChallengeUrl(mpOrder));
   }
 
   private GatewayOrderResult mapOrderResponse(Order mpOrder) {
@@ -163,9 +209,9 @@ public class MercadoPagoGateway implements PaymentGateway {
 
   private PaymentGatewayException classifyMpApiException(MPApiException e, String operation) {
     int statusCode = e.getApiResponse().getStatusCode();
-    String body = e.getApiResponse().getContent();
 
-    log.error("MP API error em '{}' - status: {}, body: {}", operation, statusCode, body);
+    log.error(
+        "MP API error em '{}' - status: {}. Body omitido por segurança.", operation, statusCode);
 
     String message =
         "Erro do gateway de pagamento ao " + operation + " (status " + statusCode + ")";
@@ -174,6 +220,80 @@ public class MercadoPagoGateway implements PaymentGateway {
       return new TransientPaymentGatewayException(message, e);
     }
     return new PermanentPaymentGatewayException(message, e);
+  }
+
+  private void applyThreeDsConfig(JsonObject payload, CreatePaymentCommand command) {
+    if (!(command.paymentMethod() instanceof CreatePaymentCommand.CreditCard)) {
+      return;
+    }
+
+    JsonObject config = getOrCreateObject(payload, "config");
+    JsonObject online = getOrCreateObject(config, "online");
+    JsonObject transactionSecurity = new JsonObject();
+    transactionSecurity.addProperty("validation", "on_fraud_risk");
+    transactionSecurity.addProperty("liability_shift", "required");
+    online.add("transaction_security", transactionSecurity);
+  }
+
+  private JsonObject getOrCreateObject(JsonObject parent, String key) {
+    JsonElement current = parent.get(key);
+    if (current != null && current.isJsonObject()) {
+      return current.getAsJsonObject();
+    }
+    JsonObject created = new JsonObject();
+    parent.add(key, created);
+    return created;
+  }
+
+  private String extractChallengeUrl(Order mpOrder) {
+    if (mpOrder.getResponse() == null || mpOrder.getResponse().getContent() == null) {
+      return null;
+    }
+
+    try {
+      JsonObject root = GSON.fromJson(mpOrder.getResponse().getContent(), JsonObject.class);
+      JsonObject transactions = getObject(root, "transactions");
+      JsonArray payments = getArray(transactions, "payments");
+      if (payments == null || payments.size() == 0 || !payments.get(0).isJsonObject()) {
+        return null;
+      }
+
+      JsonObject payment = payments.get(0).getAsJsonObject();
+      JsonObject paymentMethod = getObject(payment, "payment_method");
+      JsonObject transactionSecurity = getObject(paymentMethod, "transaction_security");
+      return getString(transactionSecurity, "url");
+    } catch (RuntimeException e) {
+      log.debug("Nao foi possivel extrair challengeUrl da resposta do MP: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private JsonObject getObject(JsonObject parent, String key) {
+    if (parent == null) {
+      return null;
+    }
+    JsonElement element = parent.get(key);
+    return element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
+  }
+
+  private JsonArray getArray(JsonObject parent, String key) {
+    if (parent == null) {
+      return null;
+    }
+    JsonElement element = parent.get(key);
+    return element != null && element.isJsonArray() ? element.getAsJsonArray() : null;
+  }
+
+  private String getString(JsonObject parent, String key) {
+    if (parent == null) {
+      return null;
+    }
+    JsonElement element = parent.get(key);
+    if (element == null || !element.isJsonPrimitive()) {
+      return null;
+    }
+    String value = element.getAsString();
+    return value != null && !value.isBlank() ? value : null;
   }
 
   private OrderPaymentMethodRequest buildPaymentMethod(CreatePaymentCommand.PaymentMethod method) {

@@ -14,11 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,8 +41,17 @@ public class PaymentController {
       @PathVariable Long orderId,
       @Valid @RequestBody InitiatePaymentRequestDto dto,
       Authentication authentication) {
-    Long clientId = (Long) ((Map<?, ?>) authentication.getDetails()).get("id");
+    Long clientId = authenticatedClientId(authentication);
     return ResponseEntity.ok(paymentApplicationService.initiatePayment(orderId, clientId, dto));
+  }
+
+  @GetMapping("/orders/{orderId}/status")
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+  @Operation(summary = "Sincroniza e retorna o status de pagamento de um pedido")
+  public ResponseEntity<InitiatePaymentResponseDto> syncPaymentStatus(
+      @PathVariable Long orderId, Authentication authentication) {
+    Long clientId = authenticatedClientId(authentication);
+    return ResponseEntity.ok(paymentApplicationService.syncPaymentStatus(orderId, clientId));
   }
 
   @PostMapping("/webhook")
@@ -48,14 +59,19 @@ public class PaymentController {
   public ResponseEntity<Void> webhook(
       @RequestHeader(value = "x-signature", required = false) String xSignature,
       @RequestHeader(value = "x-request-id", required = false) String xRequestId,
+      @RequestParam(value = "data.id", required = false) String queryDataId,
       @RequestBody MercadoPagoWebhookDto dto) {
     try {
-      paymentApplicationService.handleWebhook(xSignature, xRequestId, dto);
+      paymentApplicationService.handleWebhook(xSignature, xRequestId, queryDataId, dto);
       return ResponseEntity.ok().build();
     } catch (WebhookSignatureException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     } catch (WebhookProcessingException e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+  }
+
+  private Long authenticatedClientId(Authentication authentication) {
+    return (Long) ((Map<?, ?>) authentication.getDetails()).get("id");
   }
 }
