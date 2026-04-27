@@ -295,6 +295,7 @@ class OrderServiceTest {
 
   @Test
   void shouldUpdateOrderStatus() {
+    order.setStatus(OrderStatus.PAYMENT_CONFIRMED);
     when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
     when(orderRepository.save(any(Order.class))).thenReturn(order);
     when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
@@ -304,6 +305,62 @@ class OrderServiceTest {
     assertNotNull(result);
     assertEquals(OrderStatus.PROCESSING, order.getStatus());
     verify(orderRepository).save(order);
+  }
+
+  @Test
+  void shouldUpdateOrderStatusForwardInFulfillmentFlow() {
+    order.setStatus(OrderStatus.PROCESSING);
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+    when(orderRepository.save(any(Order.class))).thenReturn(order);
+    when(orderMapper.toResponseDto(order)).thenReturn(orderResponseDto);
+
+    OrderResponseDto result = orderService.updateOrderStatus(1L, OrderStatus.DELIVERED);
+
+    assertNotNull(result);
+    assertEquals(OrderStatus.DELIVERED, order.getStatus());
+    verify(orderRepository).save(order);
+  }
+
+  @Test
+  void shouldRejectManualFinancialOrCancellationStatusUpdate() {
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+    for (OrderStatus blockedStatus :
+        List.of(
+            OrderStatus.PENDING,
+            OrderStatus.PAYMENT_PENDING,
+            OrderStatus.PAYMENT_CONFIRMED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REFUNDED)) {
+      assertThrows(
+          IllegalArgumentException.class, () -> orderService.updateOrderStatus(1L, blockedStatus));
+    }
+
+    verify(orderRepository, never()).save(any(Order.class));
+  }
+
+  @Test
+  void shouldRejectFulfillmentStatusWhenPaymentIsNotConfirmed() {
+    order.setStatus(OrderStatus.PENDING);
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> orderService.updateOrderStatus(1L, OrderStatus.PROCESSING));
+
+    verify(orderRepository, never()).save(any(Order.class));
+  }
+
+  @Test
+  void shouldRejectBackwardFulfillmentStatusUpdate() {
+    order.setStatus(OrderStatus.SHIPPED);
+    when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> orderService.updateOrderStatus(1L, OrderStatus.PROCESSING));
+
+    verify(orderRepository, never()).save(any(Order.class));
   }
 
   @Test
