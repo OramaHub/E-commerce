@@ -19,13 +19,29 @@ import com.orama.e_commerce.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OrderService {
+
+  private static final EnumSet<OrderStatus> ADMIN_MANAGED_FULFILLMENT_STATUSES =
+      EnumSet.of(OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED);
+
+  private static final Map<OrderStatus, Integer> FULFILLMENT_STATUS_RANK =
+      Map.of(
+          OrderStatus.PAYMENT_CONFIRMED,
+          0,
+          OrderStatus.PROCESSING,
+          1,
+          OrderStatus.SHIPPED,
+          2,
+          OrderStatus.DELIVERED,
+          3);
 
   private final OrderRepository orderRepository;
   private final CartRepository cartRepository;
@@ -150,10 +166,34 @@ public class OrderService {
             .findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Pedido não encontrado com id: " + id));
 
+    validateManualStatusUpdate(order, newStatus);
     order.setStatus(newStatus);
     Order updatedOrder = orderRepository.save(order);
 
     return orderMapper.toResponseDto(updatedOrder);
+  }
+
+  private void validateManualStatusUpdate(Order order, OrderStatus newStatus) {
+    if (!ADMIN_MANAGED_FULFILLMENT_STATUSES.contains(newStatus)) {
+      throw new IllegalArgumentException(
+          "Status financeiro ou de cancelamento deve ser atualizado pelo fluxo apropriado: "
+              + newStatus);
+    }
+
+    Integer currentRank = FULFILLMENT_STATUS_RANK.get(order.getStatus());
+    if (currentRank == null) {
+      throw new IllegalArgumentException(
+          "Pedido precisa ter pagamento confirmado antes de atualizar status logistico");
+    }
+
+    Integer nextRank = FULFILLMENT_STATUS_RANK.get(newStatus);
+    if (nextRank < currentRank) {
+      throw new IllegalArgumentException(
+          "Nao e permitido retroceder status logistico de "
+              + order.getStatus()
+              + " para "
+              + newStatus);
+    }
   }
 
   @Transactional
