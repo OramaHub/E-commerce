@@ -34,13 +34,13 @@ class WebhookVerifierTest {
   }
 
   @Test
-  void verify_alphanumericDataId_rejectsUppercaseManifestSignature() {
+  void verify_alphanumericDataId_acceptsRawUppercaseManifestSignatureAsFallback() {
     WebhookVerifier verifier = new WebhookVerifier(SECRET, 300, true);
     String ts = String.valueOf(Instant.now().getEpochSecond());
     String signature = "ts=" + ts + ",v1=" + hmac("ORD01JQ4S4KY8HWQ6NA5PXB65B3D3", "req-123", ts);
 
-    assertThatThrownBy(() -> verifier.verify(signature, "req-123", "ORD01JQ4S4KY8HWQ6NA5PXB65B3D3"))
-        .isInstanceOf(WebhookSignatureException.class);
+    assertThatNoException()
+        .isThrownBy(() -> verifier.verify(signature, "req-123", "ORD01JQ4S4KY8HWQ6NA5PXB65B3D3"));
   }
 
   @Test
