@@ -25,6 +25,10 @@ public class MercadoPagoConfiguration {
 
   @PostConstruct
   public void init() {
+    if (accessToken == null || accessToken.isBlank()) {
+      throw new IllegalStateException("MERCADOPAGO_ACCESS_TOKEN nao esta configurado.");
+    }
+
     MercadoPagoConfig.setAccessToken(accessToken);
 
     if (webhookSecretRequired && (webhookSecret == null || webhookSecret.isBlank())) {

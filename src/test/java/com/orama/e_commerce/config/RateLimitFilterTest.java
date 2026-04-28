@@ -32,10 +32,50 @@ class RateLimitFilterTest {
     assertThat(blockedResponse.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
   }
 
+  @Test
+  void xForwardedForIsIgnoredByDefaultToAvoidClientSpoofing() throws ServletException, IOException {
+    RateLimitProperties properties = new RateLimitProperties();
+    properties.setDefaultRequestsPerMinute(1);
+    RateLimitFilter filter = new RateLimitFilter(properties);
+
+    MockHttpServletResponse firstResponse =
+        execute(filter, "/api/payments/orders/1", "198.51.100.10");
+    MockHttpServletResponse spoofedHeaderResponse =
+        execute(filter, "/api/payments/orders/1", "203.0.113.99");
+
+    assertThat(firstResponse.getStatus()).isEqualTo(HttpStatus.OK.value());
+    assertThat(spoofedHeaderResponse.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+  }
+
+  @Test
+  void xForwardedForCanBeTrustedWhenProxyNormalizesTheHeader()
+      throws ServletException, IOException {
+    RateLimitProperties properties = new RateLimitProperties();
+    properties.setDefaultRequestsPerMinute(1);
+    properties.setTrustXForwardedFor(true);
+    RateLimitFilter filter = new RateLimitFilter(properties);
+
+    MockHttpServletResponse firstResponse =
+        execute(filter, "/api/payments/orders/1", "198.51.100.10");
+    MockHttpServletResponse secondClientResponse =
+        execute(filter, "/api/payments/orders/1", "203.0.113.99");
+
+    assertThat(firstResponse.getStatus()).isEqualTo(HttpStatus.OK.value());
+    assertThat(secondClientResponse.getStatus()).isEqualTo(HttpStatus.OK.value());
+  }
+
   private MockHttpServletResponse execute(RateLimitFilter filter, String path)
+      throws ServletException, IOException {
+    return execute(filter, path, null);
+  }
+
+  private MockHttpServletResponse execute(RateLimitFilter filter, String path, String forwardedFor)
       throws ServletException, IOException {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setRemoteAddr("192.0.2.10");
+    if (forwardedFor != null) {
+      request.addHeader("X-Forwarded-For", forwardedFor);
+    }
     MockHttpServletResponse response = new MockHttpServletResponse();
     filter.doFilter(request, response, new MockFilterChain());
     return response;
