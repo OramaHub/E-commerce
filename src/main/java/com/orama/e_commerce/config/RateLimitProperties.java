@@ -11,6 +11,7 @@ public class RateLimitProperties {
 
   private int defaultRequestsPerMinute = 60;
   private Map<String, EndpointLimit> endpoints = new HashMap<>();
+  private boolean trustXForwardedFor = false;
 
   public int getDefaultRequestsPerMinute() {
     return defaultRequestsPerMinute;
@@ -26,6 +27,14 @@ public class RateLimitProperties {
 
   public void setEndpoints(Map<String, EndpointLimit> endpoints) {
     this.endpoints = endpoints;
+  }
+
+  public boolean isTrustXForwardedFor() {
+    return trustXForwardedFor;
+  }
+
+  public void setTrustXForwardedFor(boolean trustXForwardedFor) {
+    this.trustXForwardedFor = trustXForwardedFor;
   }
 
   public static class EndpointLimit {

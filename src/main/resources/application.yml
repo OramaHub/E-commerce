@@ -75,6 +75,7 @@ payment:
 
 rate-limit:
   default-requests-per-minute: 60
+  trust-x-forwarded-for: ${RATE_LIMIT_TRUST_X_FORWARDED_FOR:false}
   endpoints:
     "POST:/api/auth/login":
       requests-per-minute: 10
