@@ -24,10 +24,13 @@ import com.orama.e_commerce.config.CustomOrderClient;
 import com.orama.e_commerce.exceptions.payment.PaymentGatewayException;
 import com.orama.e_commerce.exceptions.payment.PermanentPaymentGatewayException;
 import com.orama.e_commerce.exceptions.payment.TransientPaymentGatewayException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,13 +38,24 @@ public class MercadoPagoGateway implements PaymentGateway {
 
   private static final Logger log = LoggerFactory.getLogger(MercadoPagoGateway.class);
   private static final Gson GSON = new Gson();
+  private static final String DEFAULT_STATEMENT_DESCRIPTOR = "MTP BONES";
+  private static final String DEFAULT_ITEM_CATEGORY_ID = "fashion";
+  private static final int STATEMENT_DESCRIPTOR_MAX_LENGTH = 13;
 
   private final CustomOrderClient customOrderClient;
   private final OrderClient orderClient;
+  private final String statementDescriptor;
+  private final String itemCategoryId;
 
-  public MercadoPagoGateway(CustomOrderClient customOrderClient, OrderClient orderClient) {
+  public MercadoPagoGateway(
+      CustomOrderClient customOrderClient,
+      OrderClient orderClient,
+      @Value("${mercadopago.statement-descriptor:MTP BONES}") String statementDescriptor,
+      @Value("${mercadopago.item-category-id:fashion}") String itemCategoryId) {
     this.customOrderClient = customOrderClient;
     this.orderClient = orderClient;
+    this.statementDescriptor = normalizeStatementDescriptor(statementDescriptor);
+    this.itemCategoryId = normalizeConfiguredValue(itemCategoryId, DEFAULT_ITEM_CATEGORY_ID);
   }
 
   @Override
@@ -50,6 +64,7 @@ public class MercadoPagoGateway implements PaymentGateway {
       OrderCreateRequest request = buildOrderRequest(command);
       JsonObject payload = Serializer.serializeToJson(request);
       applyInstallmentsWorkaround(payload, command);
+      applyIntegrationQualityData(payload, command);
       applyThreeDsConfig(payload, command);
 
       MPRequestOptions options =
@@ -155,20 +170,118 @@ public class MercadoPagoGateway implements PaymentGateway {
   }
 
   private void applyInstallmentsWorkaround(JsonObject payload, CreatePaymentCommand command) {
-    JsonObject paymentMethod =
-        payload
-            .getAsJsonObject("transactions")
-            .getAsJsonArray("payments")
-            .get(0)
-            .getAsJsonObject()
-            .getAsJsonObject("payment_method");
+    JsonObject paymentMethod = getPaymentMethodPayload(payload);
 
     if (command.paymentMethod() instanceof CreatePaymentCommand.CreditCard cc) {
       paymentMethod.addProperty("installments", cc.installments());
     } else {
       paymentMethod.remove("installments");
-      paymentMethod.remove("statement_descriptor");
     }
+  }
+
+  private void applyIntegrationQualityData(JsonObject payload, CreatePaymentCommand command) {
+    applyStatementDescriptor(payload, command.paymentMethod());
+    applyItemCategory(payload);
+    applyShipment(payload, command.payer().address());
+    applyPayerRegistrationDate(payload, command.payer().registrationDate());
+  }
+
+  private void applyStatementDescriptor(
+      JsonObject payload, CreatePaymentCommand.PaymentMethod paymentMethodCommand) {
+    JsonObject paymentMethod = getPaymentMethodPayload(payload);
+    if (paymentMethodCommand instanceof CreatePaymentCommand.CreditCard) {
+      paymentMethod.addProperty("statement_descriptor", statementDescriptor);
+      return;
+    }
+    paymentMethod.remove("statement_descriptor");
+  }
+
+  private void applyItemCategory(JsonObject payload) {
+    JsonArray items = getArray(payload, "items");
+    if (items == null) {
+      return;
+    }
+
+    for (JsonElement element : items) {
+      if (element.isJsonObject()) {
+        element.getAsJsonObject().addProperty("category_id", itemCategoryId);
+      }
+    }
+  }
+
+  private void applyShipment(JsonObject payload, CreatePaymentCommand.Address address) {
+    if (address == null || !hasAnyAddressData(address)) {
+      return;
+    }
+
+    JsonObject shipment = getOrCreateObject(payload, "shipment");
+    JsonObject shipmentAddress = getOrCreateObject(shipment, "address");
+    addStringIfPresent(shipmentAddress, "zip_code", address.zipCode());
+    addStringIfPresent(shipmentAddress, "street_name", address.streetName());
+    addStringIfPresent(shipmentAddress, "street_number", address.streetNumber());
+    addStringIfPresent(shipmentAddress, "neighborhood", address.neighborhood());
+    addStringIfPresent(shipmentAddress, "city", address.city());
+    addStringIfPresent(shipmentAddress, "state", address.state());
+  }
+
+  private void applyPayerRegistrationDate(JsonObject payload, Instant registrationDate) {
+    if (registrationDate == null) {
+      return;
+    }
+    JsonObject additionalInfo = getOrCreateObject(payload, "additional_info");
+    additionalInfo.addProperty("payer.registration_date", registrationDate.toString());
+  }
+
+  private JsonObject getPaymentMethodPayload(JsonObject payload) {
+    return payload
+        .getAsJsonObject("transactions")
+        .getAsJsonArray("payments")
+        .get(0)
+        .getAsJsonObject()
+        .getAsJsonObject("payment_method");
+  }
+
+  private boolean hasAnyAddressData(CreatePaymentCommand.Address address) {
+    return hasText(address.zipCode())
+        || hasText(address.streetName())
+        || hasText(address.streetNumber())
+        || hasText(address.neighborhood())
+        || hasText(address.city())
+        || hasText(address.state());
+  }
+
+  private void addStringIfPresent(JsonObject target, String key, String value) {
+    if (hasText(value)) {
+      target.addProperty(key, value);
+    }
+  }
+
+  private boolean hasText(String value) {
+    return value != null && !value.isBlank();
+  }
+
+  private String normalizeStatementDescriptor(String value) {
+    String normalized =
+        normalizeConfiguredValue(value, DEFAULT_STATEMENT_DESCRIPTOR)
+            .toUpperCase(Locale.ROOT)
+            .replaceAll("[^A-Z0-9 ]", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
+
+    if (normalized.isBlank()) {
+      normalized = DEFAULT_STATEMENT_DESCRIPTOR;
+    }
+    if (normalized.length() <= STATEMENT_DESCRIPTOR_MAX_LENGTH) {
+      return normalized;
+    }
+    return normalized.substring(0, STATEMENT_DESCRIPTOR_MAX_LENGTH).trim();
+  }
+
+  private String normalizeConfiguredValue(String value, String fallback) {
+    if (value == null || value.isBlank()) {
+      return fallback;
+    }
+    return value.trim();
   }
 
   private GatewayPaymentResult mapPaymentResponse(Order mpOrder) {

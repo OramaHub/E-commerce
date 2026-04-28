@@ -1,6 +1,7 @@
 package com.orama.e_commerce.service.gateway;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 public record CreatePaymentCommand(
@@ -18,6 +19,7 @@ public record CreatePaymentCommand(
       String lastName,
       String documentType,
       String documentNumber,
+      Instant registrationDate,
       Address address) {}
 
   public record Address(
