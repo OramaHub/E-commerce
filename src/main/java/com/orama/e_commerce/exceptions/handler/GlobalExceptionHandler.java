@@ -30,6 +30,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -254,6 +255,15 @@ public class GlobalExceptionHandler {
             "Nenhum handler encontrado para %s %s", ex.getHttpMethod(), ex.getRequestURL());
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, message));
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorMessage> handleNoResourceFound(
+      NoResourceFoundException ex, HttpServletRequest request) {
+    logger.warn("No static resource found for request: {}", request.getRequestURI());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, "Recurso não encontrado."));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
