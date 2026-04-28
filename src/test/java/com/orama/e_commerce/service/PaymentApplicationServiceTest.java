@@ -663,8 +663,25 @@ class PaymentApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Gateway lanca PaymentGatewayException: traduz para WebhookProcessingException")
-    void handleWebhook_gatewayException_throwsWebhookProcessingException() {
+    @DisplayName("Gateway lanca erro permanente para order desconhecida: no-op sem update")
+    void handleWebhook_permanentGatewayException_isNoOp() {
+      MercadoPagoWebhookDto dto =
+          new MercadoPagoWebhookDto(
+              "order", "order.processed", new MercadoPagoWebhookDto.WebhookData("123456"));
+
+      fakeGateway.setNextOrderStatusException(
+          new PermanentPaymentGatewayException("Order invalida no Mercado Pago"));
+
+      assertThatNoException().isThrownBy(() -> service.handleWebhook("sig", "req-id", dto));
+
+      verify(webhookVerifier).verify("sig", "req-id", "123456");
+      verify(paymentAttemptRepository, never()).save(any());
+      verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Gateway lanca erro transiente: traduz para WebhookProcessingException")
+    void handleWebhook_transientGatewayException_throwsWebhookProcessingException() {
       MercadoPagoWebhookDto dto =
           new MercadoPagoWebhookDto(
               "order", "order.updated", new MercadoPagoWebhookDto.WebhookData("MP-ORDER-123"));

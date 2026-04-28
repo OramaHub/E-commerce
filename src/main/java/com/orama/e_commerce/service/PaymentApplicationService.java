@@ -11,6 +11,7 @@ import com.orama.e_commerce.exceptions.order.OrderNotFoundException;
 import com.orama.e_commerce.exceptions.payment.OrderOwnershipException;
 import com.orama.e_commerce.exceptions.payment.PaymentAlreadyInProgressException;
 import com.orama.e_commerce.exceptions.payment.PaymentGatewayException;
+import com.orama.e_commerce.exceptions.payment.PermanentPaymentGatewayException;
 import com.orama.e_commerce.exceptions.payment.WebhookProcessingException;
 import com.orama.e_commerce.exceptions.payment.WebhookSignatureException;
 import com.orama.e_commerce.models.Address;
@@ -184,6 +185,12 @@ public class PaymentApplicationService {
           paymentAttemptRepository.findByProviderOrderId(result.providerOrderId()).orElse(null);
       if (attempt == null) return;
       applyGatewayResult(attempt, result);
+    } catch (PermanentPaymentGatewayException e) {
+      log.warn(
+          "Webhook de order ignorado: gateway nao encontrou/aceitou data.id. dataId={}, xRequestId={}, message={}",
+          maskIdentifier(dataId),
+          maskIdentifier(xRequestId),
+          e.getMessage());
     } catch (PaymentGatewayException e) {
       throw new WebhookProcessingException("Erro ao processar webhook do Mercado Pago.", e);
     }
