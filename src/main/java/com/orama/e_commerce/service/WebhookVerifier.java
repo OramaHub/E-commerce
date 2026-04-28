@@ -5,6 +5,8 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -104,27 +106,20 @@ public class WebhookVerifier {
       return false;
     }
 
-    String template =
-        "id:" + signatureDataId(dataId) + ";request-id:" + xRequestId + ";ts:" + ts + ";";
-
     try {
-      Mac mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(webhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-      byte[] hash = mac.doFinal(template.getBytes(StandardCharsets.UTF_8));
-
-      StringBuilder hex = new StringBuilder();
-      for (byte b : hash) hex.append(String.format("%02x", b));
-
-      boolean matches =
-          MessageDigest.isEqual(
-              hex.toString().getBytes(StandardCharsets.UTF_8), v1.getBytes(StandardCharsets.UTF_8));
-      if (!matches) {
-        log.warn(
-            "Webhook rejeitado: assinatura invalida. xRequestId={}, dataId={}",
-            maskIdentifier(xRequestId),
-            maskIdentifier(dataId));
+      for (String candidateDataId : signatureDataIdCandidates(dataId)) {
+        String template = "id:" + candidateDataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
+        if (matchesSignature(template, v1)) {
+          return true;
+        }
       }
-      return matches;
+
+      log.warn(
+          "Webhook rejeitado: assinatura invalida. xRequestId={}, dataId={}, normalizedDataIdTried={}",
+          maskIdentifier(xRequestId),
+          maskIdentifier(dataId),
+          !signatureDataId(dataId).equals(dataId));
+      return false;
     } catch (Exception e) {
       log.warn(
           "Webhook rejeitado: erro ao validar assinatura. xRequestId={}, dataId={}",
@@ -134,8 +129,30 @@ public class WebhookVerifier {
     }
   }
 
+  private boolean matchesSignature(String template, String v1) throws Exception {
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(new SecretKeySpec(webhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+    byte[] hash = mac.doFinal(template.getBytes(StandardCharsets.UTF_8));
+
+    StringBuilder hex = new StringBuilder();
+    for (byte b : hash) hex.append(String.format("%02x", b));
+
+    return MessageDigest.isEqual(
+        hex.toString().getBytes(StandardCharsets.UTF_8), v1.getBytes(StandardCharsets.UTF_8));
+  }
+
   private boolean isBlank(String value) {
     return value == null || value.isBlank();
+  }
+
+  private List<String> signatureDataIdCandidates(String dataId) {
+    String normalized = signatureDataId(dataId);
+    List<String> candidates = new ArrayList<>();
+    candidates.add(normalized);
+    if (!normalized.equals(dataId)) {
+      candidates.add(dataId);
+    }
+    return candidates;
   }
 
   private String signatureDataId(String dataId) {
