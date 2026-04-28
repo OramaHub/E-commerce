@@ -353,6 +353,7 @@ public class PaymentApplicationService {
             nameParts[1],
             DOCUMENT_TYPE_CPF,
             sanitizeDigitsOnly(client.getCpf()),
+            client.getCreatedAt(),
             address);
 
     List<CreatePaymentCommand.Item> items =

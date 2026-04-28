@@ -57,6 +57,8 @@ mercadopago:
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
   webhook-ts-tolerance: ${MERCADOPAGO_WEBHOOK_TS_TOLERANCE:300}
   webhook-secret-required: false
+  statement-descriptor: ${MERCADOPAGO_STATEMENT_DESCRIPTOR:MTP BONES}
+  item-category-id: ${MERCADOPAGO_ITEM_CATEGORY_ID:fashion}
 
 cloudflare:
   r2:
